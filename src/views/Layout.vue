@@ -46,8 +46,7 @@ const handleCommand = (command) => {
     <!-- 侧边栏 -->
     <el-aside class="sidebar" :width="isCollapse ? '64px' : '200px'">
       <div class="logo">
-        <span v-if="!isCollapse">苍穹外卖LOGO</span>
-        <span v-else>外卖</span>
+        <img src="@/assets/logo.png" alt="logo" class="logo-img" />
       </div>
       <el-menu
         :default-active="route.path"
@@ -111,7 +110,7 @@ const handleCommand = (command) => {
 }
 
 .sidebar {
-  background-color: #b6d5f2;
+  background-color: #f3ecc8;
   transition: width 0.3s;
   height: 100vh;
   flex-shrink: 0;
@@ -122,17 +121,20 @@ const handleCommand = (command) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
-  background-color: #b6d5f2;
+  background-color: #f3ecc8;
   white-space: nowrap;
   overflow: hidden;
 }
 
+.logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
 .sidebar-menu {
   border-right: none;
-  background-color: #b6d5f2;
+  background-color: #f3ecc8;
 }
 
 .sidebar-menu :deep(.el-menu-item) {
@@ -140,12 +142,12 @@ const handleCommand = (command) => {
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
-  background-color:#b6d5f2;
+  background-color:#f3ecc8;
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  color: #fff;
-  background-color: #b6d5f2;
+  color: #409EFF;
+  background-color: #fff;
 }
 
 .header {
@@ -192,7 +194,7 @@ const handleCommand = (command) => {
 }
 
 .main-content {
-  background-color: #f0f2f5;
+  background-color: #f5f5f5;
   padding: 20px;
   overflow-y: auto;
   flex: 1;
