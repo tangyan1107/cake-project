@@ -107,11 +107,14 @@ const handleCommand = (command) => {
 <style scoped>
 .layout-container {
   height: 100vh;
+  width: 100vw;
 }
 
 .sidebar {
   background-color: #333333;
   transition: width 0.3s;
+  height: 100vh;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -192,5 +195,6 @@ const handleCommand = (command) => {
   background-color: #f0f2f5;
   padding: 20px;
   overflow-y: auto;
+  flex: 1;
 }
 </style>
