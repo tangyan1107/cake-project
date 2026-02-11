@@ -48,6 +48,18 @@ const routes = [
         name: 'Employee',
         component: () => import('@/views/employee/index.vue'),
         meta: { title: '员工管理' }
+      },
+      {
+        path: '/employee/add',
+        name: 'EmployeeAdd',
+        component: () => import('@/views/employee/form.vue'),
+        meta: { title: '添加员工' }
+      },
+      {
+        path: '/employee/edit/:id',
+        name: 'EmployeeEdit',
+        component: () => import('@/views/employee/form.vue'),
+        meta: { title: '修改员工' }
       }
     ]
   }
