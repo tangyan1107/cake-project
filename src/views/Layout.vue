@@ -54,9 +54,9 @@ const handleCommand = (command) => {
         class="sidebar-menu"
         :collapse="isCollapse"
         :collapse-transition="false"
-        background-color="#333333"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
+        background-color="#f2b6d4"
+        text-color="#333333"
+        active-text-color="#666666"
         @select="handleMenuSelect"
       >
         <el-menu-item v-for="item in menuList" :key="item.path" :index="item.path">
@@ -111,7 +111,7 @@ const handleCommand = (command) => {
 }
 
 .sidebar {
-  background-color: #333333;
+  background-color: #b6d5f2;
   transition: width 0.3s;
   height: 100vh;
   flex-shrink: 0;
@@ -125,27 +125,27 @@ const handleCommand = (command) => {
   color: #fff;
   font-size: 18px;
   font-weight: bold;
-  background-color: #444444;
+  background-color: #b6d5f2;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .sidebar-menu {
   border-right: none;
-  background-color: #333333;
+  background-color: #b6d5f2;
 }
 
 .sidebar-menu :deep(.el-menu-item) {
-  color: #bfcbd9;
+  color: #333333;
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
-  background-color: #263445;
+  background-color:#b6d5f2;
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  color: #409EFF;
-  background-color: #263445;
+  color: #fff;
+  background-color: #b6d5f2;
 }
 
 .header {
