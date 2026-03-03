@@ -93,6 +93,46 @@ export const employeeApi = {
       url: `/admin/employee/status/${status}/${id}`,
       method: 'PUT'
     })
+  },
+
+  /**
+   * 查询今日运营数据
+   */
+  getBusinessData() {
+    return request({
+      url: '/admin/workspace/businessData',
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 查询今日订单数据
+   */
+  getOverviewOrders() {
+    return request({
+      url: '/admin/workspace/overviewOrders',
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 查询菜品总览
+   */
+  getOverviewDishes() {
+    return request({
+      url: '/admin/workspace/overviewDishes',
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 查询套餐总览
+   */
+  getOverviewSetmeals() {
+    return request({
+      url: '/admin/workspace/overviewSetmeals',
+      method: 'GET'
+    })
   }
 }
 
