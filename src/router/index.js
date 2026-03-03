@@ -3,6 +3,12 @@ import Layout from '@/views/Layout.vue'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { title: '登录' }
+  },
+  {
     path: '/',
     component: Layout,
     redirect: '/dashboard',
@@ -68,6 +74,26 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 路由守卫 - 拦截未登录用户
+router.beforeEach((to, from, next) => {
+  // 获取 token
+  const token = localStorage.getItem('token')
+  
+  // 如果访问的是登录页，直接放行
+  if (to.path === '/login') {
+    next()
+    return
+  }
+  
+  // 如果有 token，放行
+  if (token) {
+    next()
+  } else {
+    // 没有 token，重定向到登录页
+    next('/login')
+  }
 })
 
 export default router

@@ -11,7 +11,11 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    // 可以在这里添加token等认证信息
+    // 从localStorage获取token并添加到请求头
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error) => {
@@ -25,6 +29,12 @@ request.interceptors.response.use(
     return response.data
   },
   (error) => {
+    // 处理401未授权错误
+    if (error.response && error.response.status === 401) {
+      // 清除token并跳转到登录页
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
     return Promise.reject(error)
   }
 )
@@ -33,6 +43,20 @@ request.interceptors.response.use(
  * 员工管理API
  */
 export const employeeApi = {
+  /**
+   * 员工登录
+   * @param {Object} data - 登录信息
+   * @param {string} data.username - 用户名
+   * @param {string} data.password - 密码
+   */
+  login(data) {
+    return request({
+      url: '/admin/employee/login',
+      method: 'POST',
+      data
+    })
+  },
+
   /**
    * 分页查询员工
    * @param {Object} params - 查询参数
