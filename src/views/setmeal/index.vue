@@ -334,9 +334,16 @@ const formatPrice = (price) => {
   return price.toFixed(2)
 }
 
-// 格式化状态
-const formatStatus = (status) => {
-  return status === 1 ? '启售' : '停售'
+// 格式化日期时间
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  const date = new Date(dateTime)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
 onMounted(() => {
@@ -415,54 +422,70 @@ onMounted(() => {
         style="width: 100%"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column label="套餐" min-width="200">
+        <el-table-column label="套餐名称" min-width="180">
           <template #default="{ row }">
-            <div class="setmeal-info">
-              <el-image
-                :src="row.image"
-                fit="cover"
-                class="setmeal-image"
-                :preview-src-list="[row.image]"
-              >
-                <template #error>
-                  <div class="image-error">
-                    <el-icon><Picture /></el-icon>
-                  </div>
-                </template>
-              </el-image>
-              <span class="setmeal-name">{{ row.name }}</span>
-            </div>
+            <span>{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="套餐图片" width="120" align="center">
+          <template #default="{ row }">
+            <el-image
+              :src="row.image"
+              fit="cover"
+              class="setmeal-thumb-image"
+              :preview-src-list="[row.image]"
+            >
+              <template #error>
+                <div class="image-error">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
           </template>
         </el-table-column>
         <el-table-column prop="categoryName" label="套餐分类" width="120" />
-        <el-table-column label="价格" width="100">
+        <el-table-column label="套餐价" width="120">
           <template #default="{ row }">
             <span class="price">¥{{ formatPrice(row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="售卖状态" width="100">
+        <el-table-column label="售卖状态" width="100" align="center">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="1"
-              :inactive-value="0"
-              @change="handleStatusChange(row)"
-            />
-            <span class="status-text" :class="{ active: row.status === 1 }">
-              {{ formatStatus(row.status) }}
+            <span :class="row.status === 1 ? 'status-enable' : 'status-disable'">
+              {{ row.status === 1 ? '启售' : '停售' }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="套餐描述" min-width="150" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column prop="updateTime" label="最后操作时间" width="160">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>
-              编辑
+            {{ formatDateTime(row.updateTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right" align="center">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleEdit(row)">
+              修改
             </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">
-              <el-icon><Delete /></el-icon>
+            <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
+            </el-button>
+            <el-button 
+              v-if="row.status === 1" 
+              type="warning" 
+              link 
+              size="small" 
+              @click="handleStatusChange(row)"
+            >
+              停售
+            </el-button>
+            <el-button 
+              v-else 
+              type="success" 
+              link 
+              size="small" 
+              @click="handleStatusChange(row)"
+            >
+              启售
             </el-button>
           </template>
         </el-table-column>
@@ -663,32 +686,21 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.setmeal-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.setmeal-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.setmeal-name {
-  font-size: 14px;
-  color: #303133;
+.setmeal-thumb-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .image-error {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   background-color: #f5f7fa;
-  border-radius: 8px;
+  border-radius: 4px;
   color: #909399;
 }
 
@@ -708,14 +720,14 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.status-text {
-  margin-left: 8px;
-  font-size: 13px;
-  color: #909399;
+.status-enable {
+  color: #67c23a;
+  font-size: 14px;
 }
 
-.status-text.active {
-  color: #67c23a;
+.status-disable {
+  color: #909399;
+  font-size: 14px;
 }
 
 .pagination-container {
