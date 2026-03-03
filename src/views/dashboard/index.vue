@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
 import {
   Money,
@@ -10,8 +11,11 @@ import {
   Food,
   Dish,
   ShoppingBag,
-  Warning
+  Warning,
+  ArrowRight
 } from '@element-plus/icons-vue'
+
+const router = useRouter()
 
 // 今日运营数据
 const businessData = ref({
@@ -118,6 +122,21 @@ const formatMoney = (value) => {
   return value.toFixed(2)
 }
 
+// 跳转到订单管理
+const goToOrders = () => {
+  router.push('/order')
+}
+
+// 跳转到菜品管理
+const goToDishes = () => {
+  router.push('/dish')
+}
+
+// 跳转到套餐管理
+const goToSetmeals = () => {
+  router.push('/setmeal')
+}
+
 onMounted(() => {
   loadData()
 })
@@ -194,6 +213,10 @@ onMounted(() => {
         <template #header>
           <div class="card-header">
             <span class="card-title">今日订单</span>
+            <el-button type="primary" link @click="goToOrders" class="view-detail-btn">
+              查看订单明细
+              <el-icon><ArrowRight /></el-icon>
+            </el-button>
           </div>
         </template>
         <div class="order-list">
@@ -225,6 +248,10 @@ onMounted(() => {
         <template #header>
           <div class="card-header">
             <span class="card-title">菜品总览</span>
+            <el-button type="primary" link @click="goToDishes" class="view-detail-btn">
+              查看菜品管理
+              <el-icon><ArrowRight /></el-icon>
+            </el-button>
           </div>
         </template>
         <div class="product-overview">
@@ -254,6 +281,10 @@ onMounted(() => {
         <template #header>
           <div class="card-header">
             <span class="card-title">套餐总览</span>
+            <el-button type="primary" link @click="goToSetmeals" class="view-detail-btn">
+              查看套餐管理
+              <el-icon><ArrowRight /></el-icon>
+            </el-button>
           </div>
         </template>
         <div class="product-overview">
@@ -319,6 +350,18 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.view-detail-btn {
+  font-size: 14px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-detail-btn:hover {
+  background-color: #f5f7fa;
 }
 
 .data-grid {
