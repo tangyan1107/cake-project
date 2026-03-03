@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   HomeFilled,
   Document,
@@ -17,6 +18,9 @@ const route = useRoute()
 const router = useRouter()
 
 const isCollapse = ref(false)
+
+// 营业状态：true-营业中，false-休息中
+const isBusiness = ref(true)
 
 // 菜单配置
 const menuList = [
@@ -38,6 +42,24 @@ const handleCommand = (command) => {
     // 退出登录逻辑
     console.log('退出登录')
   }
+}
+
+// 切换营业状态
+const toggleBusinessStatus = () => {
+  ElMessageBox.confirm(
+    `确定要切换到${isBusiness.value ? '休息' : '营业'}状态吗？`,
+    '营业状态切换',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: isBusiness.value ? 'warning' : 'success'
+    }
+  ).then(() => {
+    isBusiness.value = !isBusiness.value
+    ElMessage.success(`已切换到${isBusiness.value ? '营业' : '休息'}状态`)
+  }).catch(() => {
+    // 用户取消
+  })
 }
 </script>
 
@@ -71,10 +93,16 @@ const handleCommand = (command) => {
       <!-- 顶部导航 -->
       <el-header class="header">
         <div class="header-left">
-          <el-tag type="danger" effect="dark" size="large">营业中</el-tag>
+          <el-tag 
+            :type="isBusiness ? 'danger' : 'info'" 
+            :effect="isBusiness ? 'dark' : 'plain'"
+            size="large"
+          >
+            {{ isBusiness ? '营业中' : '休息中' }}
+          </el-tag>
         </div>
         <div class="header-right">
-          <el-button type="primary" size="small">营业状态</el-button>
+          <el-button type="primary" size="small" @click="toggleBusinessStatus">营业状态</el-button>
           <el-badge :value="99" class="message-badge" :max="99">
             <el-icon :size="24"><Bell /></el-icon>
           </el-badge>
