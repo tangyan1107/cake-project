@@ -1,5 +1,6 @@
 package com.cake.service;
 
+import com.cake.dto.EmployeeDTO;
 import com.cake.dto.EmployeeLoginDTO;
 import com.cake.entity.Employee;
 
@@ -12,4 +13,9 @@ public interface EmployeeService {
      */
     Employee login(EmployeeLoginDTO employeeLoginDTO);
 
+    /**
+     * 新增员工
+     * @param employeeDTO
+     */
+    void save(EmployeeDTO employeeDTO);
 }

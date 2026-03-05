@@ -1,6 +1,7 @@
 package com.cake.interceptor;
 
 import com.cake.constant.JwtClaimsConstant;
+import com.cake.context.BaseContext;
 import com.cake.properties.JwtProperties;
 import com.cake.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -47,6 +48,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             Claims claims = JwtUtil.parseJWT(jwtProperties.getAdminSecretKey(), token);
             Long empId = Long.valueOf(claims.get(JwtClaimsConstant.EMP_ID).toString());
             log.info("当前员工id：", empId);
+            BaseContext.setCurrentId(empId);
             //3、通过，放行
             return true;
         } catch (Exception ex) {
