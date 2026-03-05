@@ -1,6 +1,7 @@
 package com.cake.controller.admin;
 
 import com.cake.constant.JwtClaimsConstant;
+import com.cake.dto.EmployeeDTO;
 import com.cake.dto.EmployeeLoginDTO;
 import com.cake.entity.Employee;
 import com.cake.properties.JwtProperties;
@@ -8,6 +9,8 @@ import com.cake.result.Result;
 import com.cake.service.EmployeeService;
 import com.cake.utils.JwtUtil;
 import com.cake.vo.EmployeeLoginVO;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +27,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/employee")
 @Slf4j
+@Api(tags = "员工相关接口")//tags 添加描述信息
 public class EmployeeController {
 
     @Autowired
@@ -38,6 +42,7 @@ public class EmployeeController {
      * @return
      */
     @PostMapping("/login")
+    @ApiOperation(value = "员工登录")//value 添加描述信息
     public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO) {
         log.info("员工登录：{}", employeeLoginDTO);
 
@@ -68,7 +73,22 @@ public class EmployeeController {
      * @return
      */
     @PostMapping("/logout")
+    @ApiOperation("员工退出")//value 可省
     public Result<String> logout() {
+        return Result.success();
+    }
+
+
+    /**
+     * 新增员工
+     * @param employeeDTO
+     * @return
+     */
+    @PostMapping//因为前面@RequestMapping接口路径和这边一致 所有省略
+    @ApiOperation("新增员工")
+    public Result save(@RequestBody EmployeeDTO employeeDTO) {
+        log.info("新增员工：{}", employeeDTO);
+        employeeService.save(employeeDTO);
         return Result.success();
     }
 
