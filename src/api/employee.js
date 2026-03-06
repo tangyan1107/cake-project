@@ -110,12 +110,18 @@ export const employeeApi = {
   /**
    * 启用/禁用员工账号
    * @param {number} status - 状态 1:启用 0:禁用
-   * @param {number} id - 员工ID
+   * @param {number} id - 员工 ID
    */
   updateEmployeeStatus(status, id) {
     return request({
-      url: `/admin/employee/status/${status}/${id}`,
-      method: 'PUT'
+      url: `/admin/employee/status/${status}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      data: {
+        id
+      }
     })
   },
 

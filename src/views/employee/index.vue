@@ -363,7 +363,7 @@ onMounted(() => {
         ref="formRef"
         :model="formData"
         :rules="rules"
-        label-width="100px"
+        label-width="80px"
       >
         <el-form-item label="账号" prop="username">
           <el-input
