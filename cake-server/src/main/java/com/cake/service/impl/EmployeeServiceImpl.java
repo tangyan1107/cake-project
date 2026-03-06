@@ -6,18 +6,24 @@ import com.cake.constant.StatusConstant;
 import com.cake.context.BaseContext;
 import com.cake.dto.EmployeeDTO;
 import com.cake.dto.EmployeeLoginDTO;
+import com.cake.dto.EmployeePageQueryDTO;
 import com.cake.entity.Employee;
 import com.cake.exception.AccountLockedException;
 import com.cake.exception.AccountNotFoundException;
 import com.cake.exception.PasswordErrorException;
 import com.cake.mapper.EmployeeMapper;
+import com.cake.result.PageResult;
+import com.cake.result.Result;
 import com.cake.service.EmployeeService;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -87,6 +93,24 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setUpdateUser(BaseContext.getCurrentId());
 
         employeeMapper.insert(employee);
+    }
+
+    /**
+     * 分页查询
+     * @param employeePageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO) {
+        //select * from employee 0,10
+        //开始分页查询
+        PageHelper.startPage(employeePageQueryDTO.getPage(),employeePageQueryDTO.getPageSize());
+
+        Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
+        //从分页结果page中提取当前页的所有Employee员工记录，并赋值
+        List<Employee> records = page.getResult();
+        //page.getTotal()调取符合查询条件的总记录数,records当前页码数据
+        return new PageResult(page.getTotal(),records);
     }
 
 }

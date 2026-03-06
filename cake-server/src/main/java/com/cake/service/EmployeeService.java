@@ -2,7 +2,9 @@ package com.cake.service;
 
 import com.cake.dto.EmployeeDTO;
 import com.cake.dto.EmployeeLoginDTO;
+import com.cake.dto.EmployeePageQueryDTO;
 import com.cake.entity.Employee;
+import com.cake.result.PageResult;
 
 public interface EmployeeService {
 
@@ -18,4 +20,11 @@ public interface EmployeeService {
      * @param employeeDTO
      */
     void save(EmployeeDTO employeeDTO);
+
+    /**
+     * 分页查询
+     * @param employeePageQueryDTO
+     * @return
+     */
+    PageResult pageQuery(EmployeePageQueryDTO employeePageQueryDTO);
 }
