@@ -3,8 +3,10 @@ package com.cake.controller.admin;
 import com.cake.constant.JwtClaimsConstant;
 import com.cake.dto.EmployeeDTO;
 import com.cake.dto.EmployeeLoginDTO;
+import com.cake.dto.EmployeePageQueryDTO;
 import com.cake.entity.Employee;
 import com.cake.properties.JwtProperties;
+import com.cake.result.PageResult;
 import com.cake.result.Result;
 import com.cake.service.EmployeeService;
 import com.cake.utils.JwtUtil;
@@ -13,10 +15,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,6 +89,20 @@ public class EmployeeController {
         log.info("新增员工：{}", employeeDTO);
         employeeService.save(employeeDTO);
         return Result.success();
+    }
+
+    /**
+     * 员工分页查询
+     * @param employeePageQueryDTO
+     * @return
+     */
+    @GetMapping("/page")
+    @ApiOperation("员工分页查询")
+    public Result<PageResult> page(EmployeePageQueryDTO employeePageQueryDTO) {
+        //因为不是json格式是Query格式所以不用加@RequestBody注解
+        log.info("员工分页查询，参数为：{}",employeePageQueryDTO);
+        PageResult pageResult = employeeService.pageQuery(employeePageQueryDTO);
+        return Result.success(pageResult);
     }
 
 }
