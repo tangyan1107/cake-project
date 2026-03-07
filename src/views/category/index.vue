@@ -170,22 +170,22 @@ const handleBatchDelete = async () => {
 
 // 切换状态
 const handleStatusChange = async (row) => {
-  const newStatus = row.status === 1 ? 0 : 1
-  const statusText = newStatus === 1 ? '启用' : '禁用'
+  // row.status 已经被 el-switch 更新为新值，需要取反得到旧状态
+  const targetStatus = row.status
+  const statusText = targetStatus === 1 ? '启用' : '禁用'
   try {
-    const res = await categoryApi.updateCategoryStatus(newStatus, row.id)
+    const res = await categoryApi.updateCategoryStatus(targetStatus, row.id)
     if (res.code === 1) {
       ElMessage.success(`${statusText}成功`)
-      row.status = newStatus
     } else {
       ElMessage.error(res.msg || `${statusText}失败`)
       // 恢复原状态
-      row.status = newStatus === 1 ? 0 : 1
+      row.status = targetStatus === 1 ? 0 : 1
     }
   } catch (error) {
     console.error('修改状态失败:', error)
     // 恢复原状态
-    row.status = newStatus === 1 ? 0 : 1
+    row.status = targetStatus === 1 ? 0 : 1
   }
 }
 

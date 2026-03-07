@@ -11,6 +11,11 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
+    // 从 localStorage 获取 token 并添加到请求头
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.token = token
+    }
     return config
   },
   (error) => {
@@ -24,6 +29,12 @@ request.interceptors.response.use(
     return response.data
   },
   (error) => {
+    // 处理 401 未授权错误
+    if (error.response && error.response.status === 401) {
+      // 清除 token 并跳转到登录页
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
     return Promise.reject(error)
   }
 )

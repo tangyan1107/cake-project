@@ -11,7 +11,11 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    // 可以在这里添加token等认证信息
+    // 从localStorage获取token并添加到请求头
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.token = token
+    }
     return config
   },
   (error) => {
@@ -25,6 +29,12 @@ request.interceptors.response.use(
     return response.data
   },
   (error) => {
+    // 处理 401 未授权错误
+    if (error.response && error.response.status === 401) {
+      // 清除 token 并跳转到登录页
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
     return Promise.reject(error)
   }
 )
@@ -94,23 +104,32 @@ export const categoryApi = {
   /**
    * 启用/禁用分类
    * @param {number} status - 状态 1:启用 0:禁用
-   * @param {number} id - 分类ID
+   * @param {number} id - 分类 ID
    */
   updateCategoryStatus(status, id) {
     return request({
-      url: `/admin/category/status/${status}/${id}`,
-      method: 'PUT'
+      url: `/admin/category/status/${status}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      data: {
+        id
+      }
     })
   },
 
   /**
    * 删除分类
-   * @param {number} id - 分类id
+   * @param {number} id - 分类 id
    */
   deleteCategory(id) {
     return request({
-      url: `/admin/category/${id}`,
-      method: 'DELETE'
+      url: `/admin/category`,
+      method: 'DELETE',
+      params: { 
+        id: id
+      }
     })
   }
 }
