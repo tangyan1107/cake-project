@@ -96,7 +96,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     /**
-     * 分页查询
+     * 员工分页查询
      * @param employeePageQueryDTO
      * @return
      */
@@ -105,9 +105,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         //select * from employee 0,10
         //开始分页查询
         PageHelper.startPage(employeePageQueryDTO.getPage(),employeePageQueryDTO.getPageSize());
-
-        Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
         //从分页结果page中提取当前页的所有Employee员工记录，并赋值
+        Page<Employee> page = employeeMapper.pageQuery(employeePageQueryDTO);
         List<Employee> records = page.getResult();
         //page.getTotal()调取符合查询条件的总记录数,records当前页码数据
         return new PageResult(page.getTotal(),records);
