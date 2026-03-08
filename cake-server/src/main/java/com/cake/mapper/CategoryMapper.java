@@ -1,7 +1,9 @@
 package com.cake.mapper;
 
+import com.cake.annotation.AutoFill;
 import com.cake.dto.CategoryPageQueryDTO;
 import com.cake.entity.Category;
+import com.cake.enumeration.OperationType;
 import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -25,6 +27,7 @@ public interface CategoryMapper {
      * 根据id修改/更新分类
      * @param category
      */
+    @AutoFill(value = OperationType.UPDATE)
     void update(Category category);
 
     /**
@@ -41,6 +44,7 @@ public interface CategoryMapper {
     @Insert("insert into category(type,name,sort,status,create_time,update_time,create_user, update_user)" +
             "values" +
             "(#{type},#{name},#{sort},#{status},#{createTime},#{updateTime},#{createUser},#{updateUser})")
+    @AutoFill(value = OperationType.INSERT)
     void insert(Category category);
 
     /**
