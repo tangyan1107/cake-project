@@ -2,6 +2,8 @@ package com.cake.controller.admin;
 
 
 import com.cake.dto.DishDTO;
+import com.cake.dto.DishPageQueryDTO;
+import com.cake.result.PageResult;
 import com.cake.result.Result;
 import com.cake.service.DishService;
 import io.swagger.annotations.Api;
@@ -9,6 +11,8 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 菜品管理
@@ -34,4 +38,29 @@ public class DishController {
         return Result.success();
     }
 
+    /**
+     * 菜品分页查询
+     * @param
+     * @return
+     */
+    @GetMapping("/page")
+    @ApiOperation("菜品分页查询")
+    public Result<PageResult> page (DishPageQueryDTO dishPageQueryDTO) {
+        log.info("菜品分页查询，参数为:{}",dishPageQueryDTO);
+        PageResult pageResult = dishService.pageQuery(dishPageQueryDTO);
+        return Result.success(pageResult);
+    }
+
+    /**
+     * 菜品的批量删除
+     * @param ids
+     * @return
+     */
+    @DeleteMapping
+    @ApiOperation("批量删除菜品")
+    public Result deleteDish(@RequestParam List<Long> ids) {
+        log.info("菜品批量删除：{}",ids);
+        dishService.deleteBatch(ids);
+        return Result.success();
+    }
 }
