@@ -1,6 +1,3 @@
-# 本地配置文件示例（请复制此文件为 application-dev-local.yml 并填入真实配置）
-# 此文件需要加入版本控制，但真实的本地配置文件 application-dev-local.yml 应该被忽略
-
 cake:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -8,9 +5,9 @@ cake:
     port: 3306
     database: cake_take_out
     username: root
-    password: ${DB_PASSWORD:123456}
+    password: ${DB_PASSWORD:your_password_here}
   alioss:
     endpoint: oss-cn-shanghai.aliyuncs.com
-    access-key-id: ${ALIYUN_ACCESS_KEY_ID:your-access-key-id-here}
-    access-key-secret: ${ALIYUN_ACCESS_KEY_SECRET:your-access-key-secret-here}
-    bucket-name: cake-tangyan
+    access-key-id: ${ALIYUN_ACCESS_KEY_ID:your_access_key_id}
+    access-key-secret: ${ALIYUN_ACCESS_KEY_SECRET:your_access_key_secret}
+    bucket-name: your_bucket_name
