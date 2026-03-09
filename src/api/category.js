@@ -120,6 +120,18 @@ export const categoryApi = {
   },
 
   /**
+   * 根据类型查询分类
+   * @param {number} type - 分类类型：1 为菜品分类，2 为套餐分类
+   */
+  getCategoryByType(type) {
+    return request({
+      url: '/admin/category/list',
+      method: 'GET',
+      params: { type }
+    })
+  },
+
+  /**
    * 删除分类
    * @param {number} id - 分类 id
    */

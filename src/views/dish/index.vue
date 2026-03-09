@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { dishApi } from '@/api/dish'
+import { categoryApi } from '@/api/category'
+import { commonApi } from '@/api/common'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Search, Refresh, Picture } from '@element-plus/icons-vue'
 
@@ -8,7 +10,7 @@ import { Plus, Edit, Delete, Search, Refresh, Picture } from '@element-plus/icon
 const searchForm = reactive({
   name: '',
   categoryId: null,
-  status: null
+  status: null // 售卖状态：null 全部，1 启售，0 停售
 })
 
 // 分类列表
@@ -39,9 +41,24 @@ const formData = reactive({
   price: null,
   image: '',
   description: '',
-  status: 1,
-  flavors: []
+  flavors: [] // 口味列表：[{name: '甜度', value: ['无糖', '少糖']}]
 })
+
+// 可选的口味类型
+const flavorOptions = ref([
+  { label: '甜味', value: '甜味' },
+  { label: '温度', value: '温度' },
+  { label: '忌口', value: '忌口' },
+  { label: '辣度', value: '辣度' }
+])
+
+// 默认口味选项
+const defaultFlavorValues = {
+  '甜味': ['无糖', '少糖', '半糖', '多糖', '全糖'],
+  '温度': ['冰镇', '冷藏', '常温', '温热', '滚烫'],
+  '忌口': ['不要葱', '不要蒜', '不要香菜', '不要辣椒'],
+  '辣度': ['不辣', '微辣', '中辣', '特辣']
+}
 
 // 表单校验规则
 const rules = {
@@ -54,10 +71,10 @@ const rules = {
 // 选中的菜品（用于批量删除）
 const selectedDishes = ref([])
 
-// 获取分类列表
+// 获取分类列表 - 只查询菜品分类（type=1）
 const getCategoryList = async () => {
   try {
-    const res = await dishApi.getCategoryList()
+    const res = await categoryApi.getCategoryByType(1)
     if (res.code === 1) {
       categoryList.value = res.data || []
     }
@@ -165,7 +182,36 @@ const handleDelete = async (row) => {
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
+      // 显示后端返回的错误信息
+      if (error.response && error.response.data && error.response.data.msg) {
+        ElMessage.error(error.response.data.msg)
+      } else if (error.msg) {
+        ElMessage.error(error.msg)
+      } else {
+        ElMessage.error('删除失败，请检查是否满足删除条件')
+      }
     }
+  }
+}
+
+// 切换售卖状态
+const handleToggleStatus = async (row) => {
+  // row.status 已经被 el-switch 更新为新值，需要取反得到旧状态
+  const targetStatus = row.status
+  const statusText = targetStatus === 1 ? '启售' : '停售'
+  try {
+    const res = await dishApi.updateDishStatus(targetStatus, row.id)
+    if (res.code === 1) {
+      ElMessage.success(`${statusText}成功`)
+    } else {
+      ElMessage.error(res.msg || `${statusText}失败`)
+      // 恢复原状态
+      row.status = targetStatus === 1 ? 0 : 1
+    }
+  } catch (error) {
+    console.error('切换状态失败:', error)
+    // 恢复原状态
+    row.status = targetStatus === 1 ? 0 : 1
   }
 }
 
@@ -192,28 +238,15 @@ const handleBatchDelete = async () => {
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
+      // 显示后端返回的错误信息
+      if (error.response && error.response.data && error.response.data.msg) {
+        ElMessage.error(error.response.data.msg)
+      } else if (error.msg) {
+        ElMessage.error(error.msg)
+      } else {
+        ElMessage.error('删除失败，请检查是否满足删除条件')
+      }
     }
-  }
-}
-
-// 切换状态
-const handleStatusChange = async (row) => {
-  const newStatus = row.status === 1 ? 0 : 1
-  const statusText = newStatus === 1 ? '启售' : '停售'
-  try {
-    const res = await dishApi.updateDishStatus(newStatus, row.id)
-    if (res.code === 1) {
-      ElMessage.success(`${statusText}成功`)
-      row.status = newStatus
-    } else {
-      ElMessage.error(res.msg || `${statusText}失败`)
-      // 恢复原状态
-      row.status = newStatus === 1 ? 0 : 1
-    }
-  } catch (error) {
-    console.error('修改状态失败:', error)
-    // 恢复原状态
-    row.status = newStatus === 1 ? 0 : 1
   }
 }
 
@@ -258,27 +291,71 @@ const resetForm = () => {
   formData.price = null
   formData.image = ''
   formData.description = ''
-  formData.status = 1
   formData.flavors = []
 }
 
+// 添加口味
+const handleAddFlavor = () => {
+  formData.flavors.push({
+    name: '',
+    value: []
+  })
+}
+
+// 删除口味
+const handleDeleteFlavor = (index) => {
+  formData.flavors.splice(index, 1)
+}
+
+// 口味类型变化时，重置选项
+const handleFlavorTypeChange = (flavor) => {
+  if (flavor.name && defaultFlavorValues[flavor.name]) {
+    flavor.value = [...defaultFlavorValues[flavor.name]]
+  } else {
+    flavor.value = []
+  }
+}
+
+// 移除某个口味选项
+const removeFlavorValue = (flavorIndex, optionIndex) => {
+  formData.flavors[flavorIndex].value.splice(optionIndex, 1)
+}
+
+// 添加自定义口味选项
+const addCustomFlavorValue = (flavorIndex, inputValue) => {
+  if (inputValue && !formData.flavors[flavorIndex].value.includes(inputValue)) {
+    formData.flavors[flavorIndex].value.push(inputValue)
+  }
+  // 清空输入框会在 input 事件中处理
+}
+
 // 图片上传处理
-const handleImageChange = (file) => {
+const handleImageChange = async (file) => {
   const isImage = file.raw.type.startsWith('image/')
-  const isLt5M = file.raw.size / 1024 / 1024 < 5
+  const isLt2M = file.raw.size / 1024 / 1024 < 2
 
   if (!isImage) {
     ElMessage.error('只能上传图片文件')
     return false
   }
-  if (!isLt5M) {
-    ElMessage.error('图片大小不能超过5MB')
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB')
     return false
   }
 
-  // 这里应该调用上传接口，这里用本地预览演示
-  const url = URL.createObjectURL(file.raw)
-  formData.image = url
+  try {
+    // 调用上传接口
+    const res = await commonApi.upload(file.raw)
+    if (res.code === 1) {
+      formData.image = res.data // 保存返回的文件路径
+      ElMessage.success('上传成功')
+    } else {
+      ElMessage.error(res.msg || '上传失败')
+    }
+  } catch (error) {
+    console.error('上传失败:', error)
+    ElMessage.error('上传失败，请重试')
+  }
   return false
 }
 
@@ -288,9 +365,15 @@ const formatPrice = (price) => {
   return price.toFixed(2)
 }
 
-// 格式化状态
-const formatStatus = (status) => {
-  return status === 1 ? '启售' : '停售'
+// 获取完整图片路径
+const getImageUrl = (path) => {
+  if (!path) return ''
+  // 如果已经是完整路径，直接返回
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
+  // 否则拼接基础路径
+  return `http://localhost:8080${path}`
 }
 
 onMounted(() => {
@@ -331,7 +414,7 @@ onMounted(() => {
         <el-form-item label="售卖状态">
           <el-select
             v-model="searchForm.status"
-            placeholder="请选择状态"
+            placeholder="请选择"
             clearable
             style="width: 120px"
           >
@@ -373,10 +456,10 @@ onMounted(() => {
           <template #default="{ row }">
             <div class="dish-info">
               <el-image
-                :src="row.image"
+                :src="getImageUrl(row.image)"
                 fit="cover"
                 class="dish-image"
-                :preview-src-list="[row.image]"
+                :preview-src-list="[getImageUrl(row.image)]"
               >
                 <template #error>
                   <div class="image-error">
@@ -389,33 +472,31 @@ onMounted(() => {
           </template>
         </el-table-column>
         <el-table-column prop="categoryName" label="菜品分类" width="120" />
-        <el-table-column label="价格" width="100">
+        <el-table-column label="售价" width="100">
           <template #default="{ row }">
             <span class="price">¥{{ formatPrice(row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="售卖状态" width="100">
+        <el-table-column label="售卖状态" width="120">
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
               :active-value="1"
               :inactive-value="0"
-              @change="handleStatusChange(row)"
+              @change="handleToggleStatus(row)"
             />
             <span class="status-text" :class="{ active: row.status === 1 }">
-              {{ formatStatus(row.status) }}
+              {{ row.status === 1 ? '启售' : '停售' }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="菜品描述" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="updateTime" label="最后操作时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>
-              编辑
+              修改
             </el-button>
             <el-button type="danger" link @click="handleDelete(row)">
-              <el-icon><Delete /></el-icon>
               删除
             </el-button>
           </template>
@@ -471,30 +552,80 @@ onMounted(() => {
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="菜品图片" prop="image">
-          <el-upload
-            class="dish-upload"
-            :auto-upload="false"
-            :show-file-list="false"
-            :on-change="handleImageChange"
-          >
-            <el-image
-              v-if="formData.image"
-              :src="formData.image"
-              fit="cover"
-              class="upload-image"
-            >
-              <template #error>
-                <div class="image-error">
-                  <el-icon><Picture /></el-icon>
-                </div>
-              </template>
-            </el-image>
-            <div v-else class="upload-placeholder">
-              <el-icon :size="32"><Plus /></el-icon>
-              <span>上传图片</span>
+        <el-form-item label="口味做法配置">
+          <div class="flavor-config">
+            <div v-for="(flavor, fIndex) in formData.flavors" :key="fIndex" class="flavor-item">
+              <div class="flavor-header">
+                <el-select
+                  v-model="flavor.name"
+                  placeholder="请选择口味"
+                  style="width: 200px"
+                  @change="handleFlavorTypeChange(flavor)"
+                >
+                  <el-option
+                    v-for="option in flavorOptions"
+                    :key="option.value"
+                    :label="option.label"
+                    :value="option.value"
+                  />
+                </el-select>
+                <el-button type="danger" link @click="handleDeleteFlavor(fIndex)">删除</el-button>
+              </div>
+              <div class="flavor-values">
+                <el-tag
+                  v-for="(val, vIndex) in flavor.value"
+                  :key="vIndex"
+                  closable
+                  @close="removeFlavorValue(fIndex, vIndex)"
+                  style="margin-right: 8px; margin-bottom: 8px"
+                >
+                  {{ val }}
+                </el-tag>
+                <el-input
+                  v-if="flavor.name"
+                  placeholder="+ 添加选项"
+                  size="small"
+                  style="width: 120px; display: inline-block"
+                  @keyup.enter="addCustomFlavorValue(fIndex, $event.target.value); $event.target.value = ''"
+                />
+              </div>
             </div>
-          </el-upload>
+            <el-button type="primary" @click="handleAddFlavor" style="margin-top: 10px">
+              添加口味
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="菜品图片" prop="image">
+          <div style="display: flex; align-items: flex-start; gap: 20px">
+            <el-upload
+              class="dish-upload"
+              :auto-upload="false"
+              :show-file-list="false"
+              :on-change="handleImageChange"
+            >
+              <el-image
+                v-if="formData.image"
+                :src="getImageUrl(formData.image)"
+                fit="cover"
+                class="upload-image"
+              >
+                <template #error>
+                  <div class="image-error">
+                    <el-icon><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+              <div v-else class="upload-placeholder">
+                <el-icon :size="32"><Plus /></el-icon>
+                <span>上传图片</span>
+              </div>
+            </el-upload>
+            <div class="upload-tips">
+              <p>图片大小不超过 2M</p>
+              <p>仅能上传 PNG JPEG JPG 类型图片</p>
+              <p>建议上传 200*200 或 300*300 尺寸的图片</p>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="菜品描述">
           <el-input
@@ -503,12 +634,6 @@ onMounted(() => {
             :rows="3"
             placeholder="请输入菜品描述"
           />
-        </el-form-item>
-        <el-form-item label="售卖状态">
-          <el-radio-group v-model="formData.status">
-            <el-radio :value="1">启售</el-radio>
-            <el-radio :value="0">停售</el-radio>
-          </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -627,5 +752,42 @@ onMounted(() => {
 .upload-placeholder span {
   font-size: 12px;
   margin-top: 8px;
+}
+
+.upload-tips {
+  flex: 1;
+  min-width: 200px;
+}
+
+.upload-tips p {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.6;
+}
+
+.flavor-config {
+  width: 100%;
+}
+
+.flavor-item {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: #fafafa;
+}
+
+.flavor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.flavor-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 </style>
