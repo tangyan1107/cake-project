@@ -37,3 +37,8 @@ cake:
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+  alioss:
+    endpoint: ${cake.alioss.endpoint}
+    access-key-id: ${cake.alioss.access-key-id}
+    access-key-secret: ${cake.alioss.access-key-secret}
+    bucket-name: ${cake.alioss.bucket-name}
