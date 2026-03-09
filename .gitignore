@@ -4,3 +4,11 @@
 *.class
 *Test.java
 **/test/
+
+# 本地配置文件（包含敏感信息）
+cake-server/src/main/resources/application-dev-local.yml
+cake-server/src/main/resources/application-prod-local.yml
+
+# 其他本地配置
+*.local.yml
+.env
