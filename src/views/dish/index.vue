@@ -148,11 +148,11 @@ const handleEdit = async (row) => {
     const res = await dishApi.getDishById(row.id)
     if (res.code === 1) {
       Object.assign(formData, res.data)
-      // 处理口味数据
+      // 处理口味数据 - 将后端返回的 JSON 字符串解析为数组
       if (formData.flavors) {
         formData.flavors = formData.flavors.map(f => ({
           name: f.name,
-          value: f.value
+          value: typeof f.value === 'string' ? JSON.parse(f.value) : f.value
         }))
       } else {
         formData.flavors = []

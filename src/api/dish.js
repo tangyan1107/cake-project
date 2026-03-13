@@ -110,12 +110,13 @@ export const dishApi = {
   /**
    * 启用/禁用菜品
    * @param {number} status - 状态 1:启售 0:停售
-   * @param {number} id - 菜品ID
+   * @param {number} id - 菜品 ID
    */
   updateDishStatus(status, id) {
     return request({
-      url: `/admin/dish/status/${status}/${id}`,
-      method: 'PUT'
+      url: `/admin/dish/status/${status}`,
+      method: 'POST',
+      params: { id }
     })
   },
 
@@ -126,6 +127,18 @@ export const dishApi = {
     return request({
       url: '/admin/category/list',
       method: 'GET'
+    })
+  },
+
+  /**
+   * 根据分类 id 查询菜品
+   * @param {number} categoryId - 分类 id
+   */
+  getDishListByCategoryId(categoryId) {
+    return request({
+      url: '/admin/dish/list',
+      method: 'GET',
+      params: { categoryId }
     })
   }
 }
