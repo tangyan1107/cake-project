@@ -5,10 +5,7 @@ import com.cake.dto.CategoryPageQueryDTO;
 import com.cake.entity.Category;
 import com.cake.enumeration.OperationType;
 import com.github.pagehelper.Page;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -20,7 +17,6 @@ public interface CategoryMapper {
      * @param type
      * @return
      */
-    @Select("select * from category where type = #{type}")
     List<Category> getByType(Integer type);
 
     /**

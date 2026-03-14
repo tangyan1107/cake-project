@@ -32,7 +32,7 @@
     </delete>
 
     <select id="pageQuery" resultType="com.cake.vo.DishVO">
-        select d.*, c.name as categoryName from dish d left outer join category c on d.category_id=c.id
+        select d.*,c.name as categoryName from dish d left outer join category c on d.category_id=c.id
         <where>
             <if test="name != null">
                 and d.name like concat('%',#{name},'%')
@@ -53,6 +53,19 @@
                     #{id}
                 </foreach>
         and status = #{status}
+    </select>
+
+    <select id="selectDishByCategoryId" resultType="Dish" parameterType="Dish">
+        select * from dish
+        <where>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by create_time desc
     </select>
 
 </mapper>

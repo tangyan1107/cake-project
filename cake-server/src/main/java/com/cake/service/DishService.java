@@ -2,6 +2,7 @@ package com.cake.service;
 
 import com.cake.dto.DishDTO;
 import com.cake.dto.DishPageQueryDTO;
+import com.cake.entity.Dish;
 import com.cake.result.PageResult;
 import com.cake.vo.DishVO;
 
@@ -47,4 +48,14 @@ public interface DishService {
      * @param id
      */
     void startOrStop(Integer status, Long id);
+
+    /**
+     * 根据分类id查询菜品
+     * @param categoryId
+     * @return
+     */
+    List<Dish> selectDishByCategoryId(Long categoryId);
+
+
+    List<DishVO> listWithFlavor(Long categoryId);
 }

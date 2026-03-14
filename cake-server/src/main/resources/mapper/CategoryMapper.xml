@@ -46,4 +46,13 @@
         where id = #{id}
     </update>
 
+    <select id="getByType" parameterType="java.lang.Integer" resultType="com.cake.entity.Category">
+        select * from category
+            <where>
+            <if test="type != null">
+                type = #{type}
+            </if>
+        </where>
+    </select>
+
 </mapper>

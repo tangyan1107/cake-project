@@ -1,6 +1,5 @@
 server:
   port: 8080
-
 spring:
   profiles:
     active: dev
@@ -12,7 +11,11 @@ spring:
       url: jdbc:mysql://${cake.datasource.host}:${cake.datasource.port}/${cake.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: ${cake.datasource.username}
       password: ${cake.datasource.password}
-
+  redis:
+    host: ${cake.redis.host}
+    port: ${cake.redis.port}
+    password: ${cake.redis.password}
+    database: ${cake.redis.database}
 mybatis:
   #mapper配置文件
   mapper-locations: classpath:mapper/*.xml
@@ -20,7 +23,6 @@ mybatis:
   configuration:
     #开启驼峰命名
     map-underscore-to-camel-case: true
-
 logging:
   level:
     com:
@@ -28,7 +30,6 @@ logging:
         mapper: debug
         service: info
         controller: info
-
 cake:
   jwt:
     # 设置jwt签名加密时使用的秘钥
@@ -37,8 +38,21 @@ cake:
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+    # 设置jwt签名加密时使用的密钥
+    user-secret-key: tangyan
+    # 设置jwt令牌过期时间
+    user-ttl: 7200000
+    # 设置前端传递过来的令牌名称
+    user-token-name: authentication
   alioss:
     endpoint: ${cake.alioss.endpoint}
     access-key-id: ${cake.alioss.access-key-id}
     access-key-secret: ${cake.alioss.access-key-secret}
     bucket-name: ${cake.alioss.bucket-name}
+
+  wechat:
+    appid: ${cake.wechat.appid}
+    secret: ${cake.wechat.secret}
+
+
+
