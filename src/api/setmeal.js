@@ -114,8 +114,9 @@ export const setmealApi = {
    */
   updateSetmealStatus(status, id) {
     return request({
-      url: `/admin/setmeal/status/${status}/${id}`,
-      method: 'PUT'
+      url: `/admin/setmeal/status/${status}`,
+      method: 'POST',
+      params: { id }
     })
   },
 
