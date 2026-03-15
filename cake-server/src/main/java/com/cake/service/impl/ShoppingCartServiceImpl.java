@@ -88,5 +88,46 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         return list;
     }
 
+    /**
+     * 清空购物车
+     */
+    @Override
+    public void clean() {
+        //获取到当前用户id
+        Long userId = BaseContext.getCurrentId();
+        shoppingCartMapper.clean(userId);
+    }
+
+    /**
+     * 删除购物车中一个商品
+     * @param shoppingCartDTO
+     */
+    @Override
+    public void subShoppingCart(ShoppingCartDTO shoppingCartDTO) {
+        ShoppingCart shoppingCart = new ShoppingCart();
+        BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
+        //查询当前用户的购物车数据，判断number
+        shoppingCart.setUserId(BaseContext.getCurrentId());
+        log.info("查询购物车参数：userId={},dishId={},dishFlavor={}",
+                shoppingCart.getUserId(), shoppingCart.getDishId(), shoppingCart.getDishFlavor());
+        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
+        if(list != null && list.size()>0){
+            log.info("查询到{}条记录,第一条记录id:{},dishId:{},dishFlavor:{}",
+                    list.size(), list.get(0).getId(), list.get(0).getDishId(), list.get(0).getDishFlavor());
+            shoppingCart = list.get(0);
+
+            Integer number = shoppingCart.getNumber();
+            if(number == 1){
+                //直接删除数据
+                shoppingCartMapper.delete(shoppingCart.getId());
+            }else{
+                //数量大于1时，仅修改数量
+                shoppingCart.setNumber(shoppingCart.getNumber() - 1);
+                shoppingCartMapper.updateNumberById(shoppingCart);
+            }
+
+        }
+    }
+
 
 }
