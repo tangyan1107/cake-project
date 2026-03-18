@@ -70,6 +70,79 @@ export const orderApi = {
       url: '/admin/order/statistics',
       method: 'GET'
     })
+  },
+
+  /**
+   * 接单
+   * @param {Object} data - 请求参数
+   * @param {number} data.id - 订单 id
+   */
+  confirmOrder(data) {
+    return request({
+      url: '/admin/order/confirm',
+      method: 'PUT',
+      data
+    })
+  },
+
+  /**
+   * 拒单
+   * @param {Object} data - 请求参数
+   * @param {number} data.id - 订单 id
+   * @param {string} data.rejectionReason - 拒单原因
+   */
+  rejectionOrder(data) {
+    return request({
+      url: '/admin/order/rejection',
+      method: 'PUT',
+      data
+    })
+  },
+
+  /**
+   * 取消订单
+   * @param {Object} data - 请求参数
+   * @param {number} data.id - 订单 id
+   * @param {string} data.cancelReason - 取消原因
+   */
+  cancelOrder(data) {
+    return request({
+      url: '/admin/order/cancel',
+      method: 'PUT',
+      data
+    })
+  },
+
+  /**
+   * 派送订单
+   * @param {number} id - 订单 id
+   */
+  deliveryOrder(id) {
+    return request({
+      url: `/admin/order/delivery/${id}`,
+      method: 'PUT'
+    })
+  },
+
+  /**
+   * 获取订单统计数据
+   */
+  getOrderStatisticsData() {
+    return request({
+      url: '/admin/order/statistics',
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 完成订单
+   * @param {number} id - 订单 id
+   */
+  completeOrder(id) {
+    return request({
+      url: `/admin/order/complete/${id}`,
+      method: 'PUT'
+    })
   }
 }
 

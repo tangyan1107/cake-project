@@ -18,20 +18,18 @@ const statusOptions = [
   { value: 1, label: '待付款' },
   { value: 2, label: '待接单' },
   { value: 3, label: '已接单' },
-  { value: 4, label: '待派送' },
-  { value: 5, label: '已派送' },
-  { value: 6, label: '已完成' },
-  { value: 7, label: '已取消' },
-  { value: 8, label: '退款' }
+  { value: 4, label: '派送中' },
+  { value: 5, label: '已完成' },
+  { value: 6, label: '已取消' },
+  { value: 7, label: '退款' }
 ]
 
 // 订单统计数据
 const statistics = ref({
-  toBeConfirmed: 0,
-  confirmed: 0,
-  deliveryInProgress: 0,
-  completed: 0,
-  cancelled: 0
+  toBeConfirmed: 0,      // 状态 2：待接单
+  confirmed: 0,          // 状态 3：已接单
+  deliveryInProgress: 0, // 状态 4：派送中
+  completed: 0           // 状态 5：已完成
 })
 
 // 表格数据
@@ -49,10 +47,149 @@ const pagination = ref({
 const detailDrawer = ref(false)
 const currentOrder = ref(null)
 
+// 拒单弹窗
+const rejectionDialogVisible = ref(false)
+const rejectionReason = ref('')
+const currentRejectionOrderId = ref(null)
+
+// 取消订单弹窗
+const cancelDialogVisible = ref(false)
+const cancelReason = ref('')
+const currentCancelOrderId = ref(null)
+
+// 拒单原因选项
+const rejectionReasonOptions = [
+  { value: '订单量较多，暂时无法接单', label: '订单量较多，暂时无法接单' },
+  { value: '菜品已销售完，暂时无法接单', label: '菜品已销售完，暂时无法接单' },
+  { value: '餐厅已打烊，暂时无法接单', label: '餐厅已打烊，暂时无法接单' },
+  { value: '自定义原因', label: '自定义原因' }
+]
+
+// 取消原因选项
+const cancelReasonOptions = [
+  { value: '订单量较多，暂时无法接单', label: '订单量较多，暂时无法接单' },
+  { value: '菜品已销售完，暂时无法接单', label: '菜品已销售完，暂时无法接单' },
+  { value: '骑手不足无法配送', label: '骑手不足无法配送' },
+  { value: '客户电话取消', label: '客户电话取消' },
+  { value: '自定义原因', label: '自定义原因' }
+]
+
 // 打开订单详情
 const handleViewDetail = (row) => {
   currentOrder.value = row
   detailDrawer.value = true
+}
+
+// 接单处理
+const handleConfirmOrder = async (row) => {
+  try {
+    const res = await orderApi.confirmOrder({ id: row.id })
+    if (res.code === 1) {
+      ElMessage.success('接单成功')
+      fetchOrderList()
+      fetchStatistics()
+    } else {
+      ElMessage.error(res.msg || '接单失败')
+    }
+  } catch (error) {
+    ElMessage.error('接单失败')
+  }
+}
+
+// 派送处理
+const handleViewDispatch = async (row) => {
+  try {
+    const res = await orderApi.deliveryOrder(row.id)
+    if (res.code === 1) {
+      ElMessage.success('派送成功')
+      fetchOrderList()
+      fetchStatistics()
+    } else {
+      ElMessage.error(res.msg || '派送失败')
+    }
+  } catch (error) {
+    ElMessage.error('派送失败')
+  }
+}
+
+// 打开拒单弹窗
+const handleShowRejectionDialog = (row) => {
+  currentRejectionOrderId.value = row.id
+  rejectionReason.value = ''
+  rejectionDialogVisible.value = true
+}
+
+// 拒单处理
+const handleRejectionOrder = async () => {
+  if (!rejectionReason.value) {
+    ElMessage.warning('请选择拒单原因')
+    return
+  }
+  
+  try {
+    const res = await orderApi.rejectionOrder({ 
+      id: currentRejectionOrderId.value, 
+      rejectionReason: rejectionReason.value 
+    })
+    if (res.code === 1) {
+      ElMessage.success('拒单成功')
+      rejectionDialogVisible.value = false
+      fetchOrderList()
+      fetchStatistics()
+    } else {
+      ElMessage.error(res.msg || '拒单失败')
+    }
+  } catch (error) {
+    ElMessage.error('拒单失败')
+  }
+}
+
+// 打开取消订单弹窗
+const handleShowCancelDialog = (row) => {
+  currentCancelOrderId.value = row.id
+  cancelReason.value = ''
+  cancelDialogVisible.value = true
+}
+
+// 取消订单处理
+const handleCancelOrder = async () => {
+  if (!cancelReason.value) {
+    ElMessage.warning('请选择取消原因')
+    return
+  }
+  
+  try {
+    const res = await orderApi.cancelOrder({ 
+      id: currentCancelOrderId.value, 
+      cancelReason: cancelReason.value 
+    })
+    if (res.code === 1) {
+      ElMessage.success('取消成功')
+      cancelDialogVisible.value = false
+      fetchOrderList()
+      fetchStatistics()
+    } else {
+      ElMessage.error(res.msg || '取消失败')
+    }
+  } catch (error) {
+    ElMessage.error('取消失败')
+  }
+}
+
+// 完成订单处理
+const handleCompleteOrder = async (row) => {
+  try {
+    const res = await orderApi.completeOrder(row.id)
+    if (res.code === 1) {
+      ElMessage.success('订单已完成')
+      fetchOrderList()
+      fetchStatistics()
+    } else {
+      ElMessage.error(res.msg || '完成订单失败')
+    }
+  } catch (error) {
+    ElMessage.error('完成订单失败')
+  }
 }
 
 // 获取订单列表
@@ -82,12 +219,48 @@ const fetchOrderList = async () => {
   }
 }
 
-// 获取订单统计
+// 更新统计数据（从当前查询结果中统计）
+const updateStatistics = (orders) => {
+  // 初始化各状态计数为 0
+  const stats = {
+    toBeConfirmed: 0,      // 状态 2：待接单
+    confirmed: 0,          // 状态 3：已接单
+    deliveryInProgress: 0, // 状态 4：派送中
+    completed: 0           // 状态 5：已完成
+  }
+  
+  // 遍历订单列表，统计各状态数量
+  orders.forEach(order => {
+    switch(order.status) {
+      case 2:
+        stats.toBeConfirmed++
+        break
+      case 3:
+        stats.confirmed++
+        break
+      case 4:
+        stats.deliveryInProgress++
+        break
+      case 5:
+        stats.completed++
+        break
+    }
+  })
+  
+  statistics.value = stats
+}
+
+// 获取订单统计（调用专用统计接口）
 const fetchStatistics = async () => {
   try {
-    const res = await orderApi.getOrderStatistics()
-    if (res.code === 1) {
-      statistics.value = res.data
+    const res = await orderApi.getOrderStatisticsData()
+    if (res.code === 1 && res.data) {
+      statistics.value = {
+        toBeConfirmed: res.data.toBeConfirmed || 0,      // 待接单数量
+        confirmed: res.data.confirmed || 0,              // 已接单/待派送数量
+        deliveryInProgress: res.data.deliveryInProgress || 0, // 派送中数量
+        completed: res.data.completed || res.data.finished || 0  // 已完成数量（兼容不同字段名）
+      }
     }
   } catch (error) {
     console.error('获取订单统计失败:', error)
@@ -118,6 +291,7 @@ const handleStatusChange = (status) => {
   searchForm.value.status = status
   pagination.value.page = 1
   fetchOrderList()
+  fetchStatistics() // 切换状态时刷新统计数据
 }
 
 // 分页变化
@@ -138,11 +312,10 @@ const formatStatus = (status) => {
     1: '待付款',
     2: '待接单',
     3: '已接单',
-    4: '待派送',
-    5: '已派送',
-    6: '已完成',
-    7: '已取消',
-    8: '退款'
+    4: '派送中',
+    5: '已完成',
+    6: '已取消',
+    7: '退款'
   }
   return statusMap[status] || '-'
 }
@@ -154,10 +327,9 @@ const getStatusType = (status) => {
     2: 'primary',
     3: 'primary',
     4: 'info',
-    5: 'info',
-    6: 'success',
-    7: 'danger',
-    8: 'danger'
+    5: 'success',
+    6: 'danger',
+    7: 'danger'
   }
   return typeMap[status] || 'info'
 }
@@ -242,6 +414,13 @@ onMounted(() => {
       </div>
       <div
         class="status-tab"
+        :class="{ active: searchForm.status === 1 }"
+        @click="handleStatusChange(1)"
+      >
+        待付款
+      </div>
+      <div
+        class="status-tab"
         :class="{ active: searchForm.status === 2 }"
         @click="handleStatusChange(2)"
       >
@@ -249,22 +428,22 @@ onMounted(() => {
       </div>
       <div
         class="status-tab"
-        :class="{ active: searchForm.status === 4 }"
-        @click="handleStatusChange(4)"
+        :class="{ active: searchForm.status === 3 }"
+        @click="handleStatusChange(3)"
       >
         待派送
       </div>
       <div
         class="status-tab"
-        :class="{ active: searchForm.status === 5 }"
-        @click="handleStatusChange(5)"
+        :class="{ active: searchForm.status === 4 }"
+        @click="handleStatusChange(4)"
       >
         派送中
       </div>
       <div
         class="status-tab"
-        :class="{ active: searchForm.status === 6 }"
-        @click="handleStatusChange(6)"
+        :class="{ active: searchForm.status === 5 }"
+        @click="handleStatusChange(5)"
       >
         已完成
       </div>
@@ -280,59 +459,45 @@ onMounted(() => {
     <!-- 搜索区域 -->
     <el-card class="search-card" shadow="hover">
       <el-form inline class="search-form">
-        <el-form-item label="订单号">
+        <el-form-item label="订单号：">
           <el-input
             v-model="searchForm.number"
             placeholder="请输入订单号"
             clearable
-            style="width: 220px"
+            style="width: 200px"
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="手机号">
+        <el-form-item label="手机号：">
           <el-input
             v-model="searchForm.phone"
-            placeholder="请输入手机号"
+            placeholder="请填写手机号"
             clearable
-            style="width: 180px"
+            style="width: 200px"
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="订单状态">
-          <el-select
-            v-model="searchForm.status"
-            placeholder="请选择状态"
-            clearable
-            style="width: 140px"
-          >
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="下单时间">
+        <el-form-item label="下单时间：">
           <el-date-picker
             v-model="searchForm.beginTime"
-            type="datetime"
-            placeholder="开始时间"
-            style="width: 200px"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            type="date"
+            placeholder="开始日期"
+            style="width: 140px"
+            value-format="YYYY-MM-DD"
+            :prefix-icon="null"
           />
-          <span style="margin: 0 10px">-</span>
+          <span style="margin: 0 8px; color: #909399; font-size: 14px;">至</span>
           <el-date-picker
             v-model="searchForm.endTime"
-            type="datetime"
-            placeholder="结束时间"
-            style="width: 200px"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            type="date"
+            placeholder="结束日期"
+            style="width: 140px"
+            value-format="YYYY-MM-DD"
+            :prefix-icon="null"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-          <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -345,55 +510,94 @@ onMounted(() => {
         style="width: 100%"
         class="order-table"
       >
-        <el-table-column prop="number" label="订单号" align="center" min-width="160" />
-        <el-table-column label="订单状态" align="center" width="100">
+        <el-table-column prop="number" label="订单号" align="center" min-width="150" />
+        <el-table-column prop="status" label="订单状态" align="center" width="90">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
               {{ formatStatus(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="订单金额" align="center" width="100">
+        <el-table-column prop="userName" label="用户名" align="center" width="80" />
+        <el-table-column prop="phone" label="手机号" align="center" min-width="110" />
+        <el-table-column prop="address" label="地址" align="center" min-width="150" />
+        <el-table-column prop="orderTime" label="下单时间" align="center" min-width="140">
+          <template #default="{ row }">
+            {{ formatDateTime(row.orderTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="实收金额" align="center" width="90">
           <template #default="{ row }">
             <span style="color: #f56c6c; font-weight: bold;">
               {{ formatAmount(row.amount) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="下单时间" align="center" min-width="160">
+        <el-table-column label="操作" align="center" width="200">
           <template #default="{ row }">
-            {{ formatDateTime(row.orderTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="支付方式" align="center" width="100">
-          <template #default="{ row }">
-            {{ formatPayMethod(row.payMethod) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="联系人" align="center" width="90">
-          <template #default="{ row }">
-            {{ row.consignee || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="手机号" align="center" min-width="120">
-          <template #default="{ row }">
-            {{ row.phone }}
-          </template>
-        </el-table-column>
-        <el-table-column label="地址" align="center" min-width="200">
-          <template #default="{ row }">
-            {{ row.address }}
-          </template>
-        </el-table-column>
-        <el-table-column label="备注" align="center" min-width="140">
-          <template #default="{ row }">
-            {{ row.remark || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" align="center" width="100">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleViewDetail(row)">
-              <el-icon><View /></el-icon>
+            <!-- 待接单状态（status=2）显示接单、拒单按钮 -->
+            <el-button 
+              v-if="row.status === 2" 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleConfirmOrder(row)"
+            >
+              接单
+            </el-button>
+            <el-button 
+              v-if="row.status === 2" 
+              link 
+              type="danger" 
+              size="small" 
+              @click="handleShowRejectionDialog(row)"
+            >
+              拒单
+            </el-button>
+            <!-- 待派送/已接单状态（status=3）显示派送、取消按钮 -->
+            <el-button 
+              v-if="row.status === 3" 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleViewDispatch(row)"
+            >
+              派送
+            </el-button>
+            <el-button 
+              v-if="row.status === 3" 
+              link 
+              type="danger" 
+              size="small" 
+              @click="handleShowCancelDialog(row)"
+            >
+              取消
+            </el-button>
+            <!-- 派送中状态（status=4）显示完成、取消按钮 -->
+            <el-button 
+              v-if="row.status === 4" 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleCompleteOrder(row)"
+            >
+              完成
+            </el-button>
+            <el-button 
+              v-if="row.status === 4" 
+              link 
+              type="danger" 
+              size="small" 
+              @click="handleShowCancelDialog(row)"
+            >
+              取消
+            </el-button>
+            <el-button 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleViewDetail(row)"
+            >
               查看
             </el-button>
           </template>
@@ -552,6 +756,64 @@ onMounted(() => {
         </div>
       </div>
     </el-drawer>
+
+    <!-- 拒单原因弹窗 -->
+    <el-dialog
+      v-model="rejectionDialogVisible"
+      title="拒绝原因"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form>
+        <el-form-item label="拒绝原因：">
+          <el-select
+            v-model="rejectionReason"
+            placeholder="请选择拒绝原因"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="option in rejectionReasonOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="rejectionDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleRejectionOrder">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 取消原因弹窗 -->
+    <el-dialog
+      v-model="cancelDialogVisible"
+      title="取消原因"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form>
+        <el-form-item label="取消原因：">
+          <el-select
+            v-model="cancelReason"
+            placeholder="请选择取消原因"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="option in cancelReasonOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="cancelDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleCancelOrder">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -674,13 +936,19 @@ onMounted(() => {
 
 .search-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 16px;
+  align-items: center;
 }
 
 .search-form .el-form-item {
-  margin-bottom: 10px;
+  margin-bottom: 0;
   margin-right: 0;
+}
+
+.search-form .el-form-item__label {
+  font-weight: normal;
+  color: #606266;
 }
 
 .table-card {
