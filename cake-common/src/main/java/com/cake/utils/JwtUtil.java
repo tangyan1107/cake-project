@@ -35,7 +35,7 @@ public class JwtUtil {
                 // 设置过期时间
                 .setExpiration(exp);
 
-        return builder.compact();
+        return builder.compact();//通过前面组装好的JWT令牌参数生成并返回一个字符串形式的JWT令牌
     }
 
     /**

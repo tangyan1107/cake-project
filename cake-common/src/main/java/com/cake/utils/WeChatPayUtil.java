@@ -172,8 +172,11 @@ public class WeChatPayUtil {
 
         String prepayId = jsonObject.getString("prepay_id");
         if (prepayId != null) {
+            //生成时间戳
             String timeStamp = String.valueOf(System.currentTimeMillis() / 1000);
+            //生成随机字符
             String nonceStr = RandomStringUtils.randomNumeric(32);
+            //组装签名参数列表
             ArrayList<Object> list = new ArrayList<>();
             list.add(weChatProperties.getAppid());
             list.add(timeStamp);
