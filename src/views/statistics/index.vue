@@ -6,12 +6,17 @@ import {
   TrendCharts,
   User,
   ShoppingCart,
-  Trophy,
-  Download
+  Trophy
 } from '@element-plus/icons-vue'
 
 // 日期范围
 const dateRange = ref([])
+
+// 当前选中的时间标签
+const activeTimeTab = ref('近7日')
+
+// 时间标签选项
+const timeTabs = ['昨日', '近7日', '近30日', '本周', '本月']
 
 // 加载状态
 const loading = ref(false)
@@ -53,12 +58,19 @@ const initTurnoverChart = () => {
   const chartDom = document.getElementById('turnoverChart')
   if (!chartDom) return
   
-  turnoverChart = echarts.init(chartDom)
+  if (!turnoverChart) {
+    turnoverChart = echarts.init(chartDom)
+  }
+  
   const option = {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'cross'
+        type: 'line',
+        lineStyle: {
+          color: '#409EFF',
+          type: 'dashed'
+        }
       },
       formatter: function(params) {
         return params[0].name + '<br/>' +
@@ -69,6 +81,7 @@ const initTurnoverChart = () => {
       left: '3%',
       right: '4%',
       bottom: '3%',
+      top: '10%',
       containLabel: true
     },
     xAxis: {
@@ -77,16 +90,29 @@ const initTurnoverChart = () => {
       data: turnoverData.value.dateList,
       axisLine: {
         lineStyle: {
-          color: '#909399'
+          color: '#DCDFE6'
         }
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 12
+      },
+      axisTick: {
+        show: false
       }
     },
     yAxis: {
       type: 'value',
+      min: 0,
       axisLine: {
-        lineStyle: {
-          color: '#909399'
-        }
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 12
       },
       splitLine: {
         lineStyle: {
@@ -98,24 +124,24 @@ const initTurnoverChart = () => {
       {
         name: '营业额',
         type: 'line',
-        smooth: true,
+        smooth: false,
         symbol: 'circle',
-        symbolSize: 8,
+        symbolSize: 6,
         sampling: 'average',
         itemStyle: {
-          color: '#409EFF'
+          color: '#409EFF',
+          borderWidth: 2,
+          borderColor: '#fff'
         },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-            { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
-          ])
+        lineStyle: {
+          color: '#409EFF',
+          width: 2
         },
         data: turnoverData.value.turnoverList
       }
     ]
   }
-  turnoverChart.setOption(option)
+  turnoverChart.setOption(option, true)
 }
 
 // 初始化用户统计图表
@@ -123,22 +149,33 @@ const initUserChart = () => {
   const chartDom = document.getElementById('userChart')
   if (!chartDom) return
   
-  userChart = echarts.init(chartDom)
+  if (!userChart) {
+    userChart = echarts.init(chartDom)
+  }
+  
   const option = {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'cross'
+        type: 'line',
+        lineStyle: {
+          color: '#409EFF',
+          type: 'dashed'
+        }
       }
     },
     legend: {
-      data: ['新增用户', '总用户量'],
-      bottom: 0
+      data: ['all', 'new'],
+      bottom: 0,
+      icon: 'roundRect',
+      itemWidth: 20,
+      itemHeight: 3
     },
     grid: {
       left: '3%',
       right: '4%',
       bottom: '10%',
+      top: '10%',
       containLabel: true
     },
     xAxis: {
@@ -147,16 +184,29 @@ const initUserChart = () => {
       data: userData.value.dateList,
       axisLine: {
         lineStyle: {
-          color: '#909399'
+          color: '#DCDFE6'
         }
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 12
+      },
+      axisTick: {
+        show: false
       }
     },
     yAxis: {
       type: 'value',
+      min: 0,
       axisLine: {
-        lineStyle: {
-          color: '#909399'
-        }
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 12
       },
       splitLine: {
         lineStyle: {
@@ -166,30 +216,42 @@ const initUserChart = () => {
     },
     series: [
       {
-        name: '新增用户',
+        name: 'all',
         type: 'line',
-        smooth: true,
+        smooth: false,
         symbol: 'circle',
         symbolSize: 6,
         itemStyle: {
-          color: '#67C23A'
+          color: '#409EFF',
+          borderWidth: 2,
+          borderColor: '#fff'
         },
-        data: userData.value.newUserList
-      },
-      {
-        name: '总用户量',
-        type: 'line',
-        smooth: true,
-        symbol: 'circle',
-        symbolSize: 6,
-        itemStyle: {
-          color: '#409EFF'
+        lineStyle: {
+          color: '#409EFF',
+          width: 2
         },
         data: userData.value.totalUserList
+      },
+      {
+        name: 'new',
+        type: 'line',
+        smooth: false,
+        symbol: 'circle',
+        symbolSize: 6,
+        itemStyle: {
+          color: '#67C23A',
+          borderWidth: 2,
+          borderColor: '#fff'
+        },
+        lineStyle: {
+          color: '#67C23A',
+          width: 2
+        },
+        data: userData.value.newUserList
       }
     ]
   }
-  userChart.setOption(option)
+  userChart.setOption(option, true)
 }
 
 // 初始化订单统计图表
@@ -197,22 +259,33 @@ const initOrderChart = () => {
   const chartDom = document.getElementById('orderChart')
   if (!chartDom) return
   
-  orderChart = echarts.init(chartDom)
+  if (!orderChart) {
+    orderChart = echarts.init(chartDom)
+  }
+  
   const option = {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'line'
+        type: 'line',
+        lineStyle: {
+          color: '#409EFF',
+          type: 'dashed'
+        }
       }
     },
     legend: {
-      data: ['订单总数', '有效订单'],
-      bottom: 0
+      data: ['all', 'order'],
+      bottom: 0,
+      icon: 'roundRect',
+      itemWidth: 20,
+      itemHeight: 3
     },
     grid: {
       left: '3%',
       right: '4%',
       bottom: '10%',
+      top: '10%',
       containLabel: true
     },
     xAxis: {
@@ -221,16 +294,29 @@ const initOrderChart = () => {
       data: orderData.value.dateList,
       axisLine: {
         lineStyle: {
-          color: '#909399'
+          color: '#DCDFE6'
         }
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 12
+      },
+      axisTick: {
+        show: false
       }
     },
     yAxis: {
       type: 'value',
+      min: 0,
       axisLine: {
-        lineStyle: {
-          color: '#909399'
-        }
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 12
       },
       splitLine: {
         lineStyle: {
@@ -240,36 +326,42 @@ const initOrderChart = () => {
     },
     series: [
       {
-        name: '订单总数',
+        name: 'all',
         type: 'line',
         smooth: false,
         symbol: 'circle',
         symbolSize: 6,
         itemStyle: {
-          color: '#409EFF'
+          color: '#409EFF',
+          borderWidth: 2,
+          borderColor: '#fff'
         },
         lineStyle: {
+          color: '#409EFF',
           width: 2
         },
         data: orderData.value.orderCountList
       },
       {
-        name: '有效订单',
+        name: 'order',
         type: 'line',
         smooth: false,
         symbol: 'circle',
         symbolSize: 6,
         itemStyle: {
-          color: '#67C23A'
+          color: '#67C23A',
+          borderWidth: 2,
+          borderColor: '#fff'
         },
         lineStyle: {
+          color: '#67C23A',
           width: 2
         },
         data: orderData.value.validOrderCountList
       }
     ]
   }
-  orderChart.setOption(option)
+  orderChart.setOption(option, true)
 }
 
 // 初始化销量TOP10图表
@@ -277,7 +369,10 @@ const initTop10Chart = () => {
   const chartDom = document.getElementById('top10Chart')
   if (!chartDom) return
   
-  top10Chart = echarts.init(chartDom)
+  if (!top10Chart) {
+    top10Chart = echarts.init(chartDom)
+  }
+  
   const option = {
     tooltip: {
       trigger: 'axis',
@@ -291,30 +386,23 @@ const initTop10Chart = () => {
     },
     grid: {
       left: '3%',
-      right: '4%',
-      bottom: '15%',
+      right: '8%',
+      top: '5%',
+      bottom: '5%',
       containLabel: true
     },
     xAxis: {
-      type: 'category',
-      data: top10Data.value.nameList,
+      type: 'value',
+      min: 0,
       axisLine: {
-        lineStyle: {
-          color: '#909399'
-        }
+        show: false
+      },
+      axisTick: {
+        show: false
       },
       axisLabel: {
-        rotate: 30,
-        interval: 0,
+        color: '#606266',
         fontSize: 11
-      }
-    },
-    yAxis: {
-      type: 'value',
-      axisLine: {
-        lineStyle: {
-          color: '#909399'
-        }
       },
       splitLine: {
         lineStyle: {
@@ -322,20 +410,43 @@ const initTop10Chart = () => {
         }
       }
     },
+    yAxis: {
+      type: 'category',
+      data: top10Data.value.nameList,
+      axisLine: {
+        lineStyle: {
+          color: '#DCDFE6'
+        }
+      },
+      axisLabel: {
+        color: '#606266',
+        fontSize: 11,
+        interval: 0
+      },
+      axisTick: {
+        show: false
+      }
+    },
     series: [
       {
         name: '销量',
         type: 'bar',
-        barWidth: '50%',
+        barWidth: '60%',
         itemStyle: {
           color: '#409EFF',
-          borderRadius: [4, 4, 0, 0]
+          borderRadius: [0, 4, 4, 0]
         },
-        data: top10Data.value.numberList
+        data: top10Data.value.numberList,
+        label: {
+          show: true,
+          position: 'right',
+          color: '#606266',
+          fontSize: 11
+        }
       }
     ]
   }
-  top10Chart.setOption(option)
+  top10Chart.setOption(option, true)
 }
 
 // 获取营业额统计数据
@@ -349,7 +460,14 @@ const getTurnoverData = async () => {
     }
     const res = await reportApi.getTurnoverStatistics(params)
     if (res.code === 1) {
-      turnoverData.value = res.data
+      // 解析逗号分隔的字符串为数组
+      const dateList = res.data.dateList ? res.data.dateList.split(',') : []
+      const turnoverList = res.data.turnoverList ? res.data.turnoverList.split(',').map(v => parseFloat(v) || 0) : []
+      
+      turnoverData.value = {
+        dateList,
+        turnoverList
+      }
       nextTick(() => {
         initTurnoverChart()
       })
@@ -370,7 +488,16 @@ const getUserData = async () => {
     }
     const res = await reportApi.getUserStatistics(params)
     if (res.code === 1) {
-      userData.value = res.data
+      // 解析逗号分隔的字符串为数组
+      const dateList = res.data.dateList ? res.data.dateList.split(',') : []
+      const newUserList = res.data.newUserList ? res.data.newUserList.split(',').map(v => parseInt(v) || 0) : []
+      const totalUserList = res.data.totalUserList ? res.data.totalUserList.split(',').map(v => parseInt(v) || 0) : []
+      
+      userData.value = {
+        dateList,
+        newUserList,
+        totalUserList
+      }
       nextTick(() => {
         initUserChart()
       })
@@ -391,7 +518,19 @@ const getOrderData = async () => {
     }
     const res = await reportApi.getOrdersStatistics(params)
     if (res.code === 1) {
-      orderData.value = res.data
+      // 解析逗号分隔的字符串为数组
+      const dateList = res.data.dateList ? res.data.dateList.split(',') : []
+      const orderCountList = res.data.orderCountList ? res.data.orderCountList.split(',').map(v => parseInt(v) || 0) : []
+      const validOrderCountList = res.data.validOrderCountList ? res.data.validOrderCountList.split(',').map(v => parseInt(v) || 0) : []
+      
+      orderData.value = {
+        dateList,
+        orderCountList,
+        validOrderCountList,
+        totalOrderCount: res.data.totalOrderCount || 0,
+        validOrderCount: res.data.validOrderCount || 0,
+        orderCompletionRate: res.data.orderCompletionRate || 0
+      }
       nextTick(() => {
         initOrderChart()
       })
@@ -412,7 +551,15 @@ const getTop10Data = async () => {
     }
     const res = await reportApi.getTop10(params)
     if (res.code === 1) {
-      top10Data.value = res.data
+      // 解析逗号分隔的字符串为数组
+      const nameList = res.data.nameList ? res.data.nameList.split(',') : []
+      const numberList = res.data.numberList ? res.data.numberList.split(',').map(v => parseInt(v) || 0) : []
+      
+      // 将数据反转，让销量高的排在上方
+      top10Data.value = {
+        nameList: nameList.reverse(),
+        numberList: numberList.reverse()
+      }
       nextTick(() => {
         initTop10Chart()
       })
@@ -439,40 +586,36 @@ const loadAllData = async () => {
   loading.value = false
 }
 
-// 搜索
-const handleSearch = () => {
-  loadAllData()
-}
+// 是否为自定义日期范围
+const isCustomDateRange = ref(false)
 
-// 导出Excel
-const handleExport = async () => {
-  if (!dateRange.value || dateRange.value.length !== 2) {
-    ElMessage.warning('请选择日期范围')
-    return
+// 搜索 - 仅查询自定义日期范围，如果日期不匹配任何标签则取消标签选中状态
+const handleSearch = () => {
+  // 检查当前日期范围是否匹配某个标签
+  const currentBegin = dateRange.value?.[0]
+  const currentEnd = dateRange.value?.[1]
+  
+  if (currentBegin && currentEnd) {
+    let matchedTab = null
+    for (const tab of timeTabs) {
+      const [tabBegin, tabEnd] = getDateRangeByTab(tab)
+      if (currentBegin === tabBegin && currentEnd === tabEnd) {
+        matchedTab = tab
+        break
+      }
+    }
+    
+    // 如果没有匹配的标签，清空选中状态并标记为自定义日期
+    if (!matchedTab) {
+      activeTimeTab.value = null
+      isCustomDateRange.value = true
+    } else {
+      activeTimeTab.value = matchedTab
+      isCustomDateRange.value = false
+    }
   }
   
-  try {
-    const params = {
-      begin: dateRange.value[0],
-      end: dateRange.value[1]
-    }
-    const res = await reportApi.exportExcel(params)
-    
-    // 创建下载链接
-    const blob = new Blob([res], { type: 'application/vnd.ms-excel' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `运营数据报表_${dateRange.value[0]}_${dateRange.value[1]}.xlsx`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(link.href)
-    
-    ElMessage.success('导出成功')
-  } catch (error) {
-    ElMessage.error('导出失败')
-    console.error('导出失败:', error)
-  }
+  loadAllData()
 }
 
 // 格式化百分比
@@ -489,20 +632,54 @@ const handleResize = () => {
   top10Chart?.resize()
 }
 
-// 设置默认日期范围（最近7天）
-const setDefaultDateRange = () => {
+// 格式化日期
+const formatDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// 获取日期范围根据标签
+const getDateRangeByTab = (tab) => {
   const end = new Date()
   const start = new Date()
-  start.setDate(start.getDate() - 6)
   
-  const formatDate = (date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+  switch (tab) {
+    case '昨日':
+      start.setDate(start.getDate() - 1)
+      end.setDate(end.getDate() - 1)
+      return [formatDate(start), formatDate(end)]
+    case '近7日':
+      start.setDate(start.getDate() - 6)
+      return [formatDate(start), formatDate(end)]
+    case '近30日':
+      start.setDate(start.getDate() - 29)
+      return [formatDate(start), formatDate(end)]
+    case '本周':
+      const dayOfWeek = start.getDay() || 7
+      start.setDate(start.getDate() - dayOfWeek + 1)
+      return [formatDate(start), formatDate(end)]
+    case '本月':
+      start.setDate(1)
+      return [formatDate(start), formatDate(end)]
+    default:
+      start.setDate(start.getDate() - 6)
+      return [formatDate(start), formatDate(end)]
   }
-  
-  dateRange.value = [formatDate(start), formatDate(end)]
+}
+
+// 切换时间标签
+const handleTimeTabChange = (tab) => {
+  activeTimeTab.value = tab
+  isCustomDateRange.value = false
+  dateRange.value = getDateRangeByTab(tab)
+  loadAllData()
+}
+
+// 设置默认日期范围（最近7天）
+const setDefaultDateRange = () => {
+  dateRange.value = getDateRangeByTab('近7日')
 }
 
 onMounted(() => {
@@ -533,15 +710,21 @@ onMounted(() => {
             end-placeholder="结束日期"
             value-format="YYYY-MM-DD"
             style="width: 320px"
+            :class="{ 'custom-date-active': isCustomDateRange }"
           />
-        </div>
-        <div class="search-actions">
-          <el-button type="primary" :icon="TrendCharts" @click="handleSearch">
+          <el-button type="primary" :icon="TrendCharts" @click="handleSearch" style="margin-left: 12px;">
             查询数据
           </el-button>
-          <el-button :icon="Download" @click="handleExport">
-            导出报表
-          </el-button>
+        </div>
+        <div class="time-tabs">
+          <span
+            v-for="tab in timeTabs"
+            :key="tab"
+            :class="['time-tab', { active: activeTimeTab === tab }]"
+            @click="handleTimeTabChange(tab)"
+          >
+            {{ tab }}
+          </span>
         </div>
       </div>
     </el-card>
@@ -658,9 +841,17 @@ onMounted(() => {
 .search-form {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.search-form .search-item {
+  flex-shrink: 0;
+}
+
+.search-form .time-tabs {
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .search-item {
@@ -727,6 +918,45 @@ onMounted(() => {
   color: #303133;
 }
 
+.time-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.time-tab {
+  padding: 4px 12px;
+  font-size: 13px;
+  color: #606266;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.time-tab:hover {
+  color: #409EFF;
+  background-color: #ECF5FF;
+}
+
+.time-tab.active {
+  color: #fff;
+  background-color: #409EFF;
+}
+
+/* 自定义日期范围时日期选择器的样式 */
+:deep(.custom-date-active .el-input__wrapper) {
+  background-color: #fdf6ec;
+  box-shadow: 0 0 0 1px #e6a23c inset;
+}
+
+:deep(.custom-date-active .el-input__inner) {
+  color: #e6a23c;
+  font-weight: 500;
+}
+
+:deep(.custom-date-active .el-range-separator) {
+  color: #e6a23c;
+}
+
 .overview-stats {
   display: flex;
   gap: 40px;
@@ -783,15 +1013,34 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+  overflow: hidden;
 }
 
 .chart-card {
   height: 420px;
+  overflow: hidden !important;
+}
+
+.chart-card :deep(.el-card__body) {
+  overflow: hidden !important;
+}
+
+/* 隐藏所有滚动条 */
+.chart-card ::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.chart-card {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 .chart-container {
   width: 100%;
   height: 320px;
+  overflow: hidden;
 }
 
 .order-summary {
