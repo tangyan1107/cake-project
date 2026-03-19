@@ -26,6 +26,9 @@ const isBusiness = ref(true)
 // WebSocket 消息计数
 const messageCount = ref(0)
 
+// 防止重复处理消息的标志
+const isProcessingMessage = ref(false)
+
 // 菜单配置
 const menuList = [
   { path: '/dashboard', title: '工作台', icon: HomeFilled },
@@ -248,9 +251,23 @@ onMounted(() => {
 
 // 注册消息监听器
 const registerMessageListener = () => {
+  // 先移除旧的监听器（如果存在）
+  if (removeMessageListener) {
+    removeMessageListener()
+    console.log('🗑️ 已移除旧的消息监听器')
+  }
+  
   console.log('🔔 Layout: 注册 WebSocket 消息监听器')
-  removeMessageListener.value = websocket.onMessage((message) => {
+  removeMessageListener = websocket.onMessage((message) => {
     console.log('📩 Layout: 收到 WebSocket 消息:', message)
+    
+    // 防止重复处理
+    if (isProcessingMessage.value) {
+      console.log('️ 消息正在处理中，跳过')
+      return
+    }
+    isProcessingMessage.value = true
+    
     console.log('📊 消息类型:', typeof message)
     messageCount.value++
     
@@ -301,7 +318,13 @@ const registerMessageListener = () => {
       })
       speakMessage(message)
     }
+    
+    // 重置处理标志
+    setTimeout(() => {
+      isProcessingMessage.value = false
+    }, 100)
   })
+  console.log('✅ 消息监听器注册完成')
 }
 
 // 组件卸载时清理
@@ -357,7 +380,7 @@ onUnmounted(() => {
         </div>
         <div class="header-right">
           <el-button type="primary" size="small" @click="toggleBusinessStatus">营业状态</el-button>
-          <el-badge :value="messageCount" :is-dot="messageCount > 0" class="message-badge">
+          <el-badge :is-dot="messageCount > 0" class="message-badge">
             <el-icon :size="24"><Bell /></el-icon>
           </el-badge>
           <el-dropdown @command="handleCommand">
