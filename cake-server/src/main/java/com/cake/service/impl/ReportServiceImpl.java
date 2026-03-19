@@ -4,6 +4,7 @@ import com.cake.entity.Orders;
 import com.cake.mapper.OrderMapper;
 import com.cake.mapper.UserMapper;
 import com.cake.service.ReportService;
+import com.cake.vo.OrderReportVO;
 import com.cake.vo.TurnoverReportVO;
 import com.cake.vo.UserReportVO;
 import lombok.extern.slf4j.Slf4j;
@@ -114,4 +115,67 @@ public class ReportServiceImpl implements ReportService {
                 .totalUserList(StringUtils.join(totalUserList, ","))
                 .build();
     }
+
+    /**
+     * 统计指定时间内的订单相关数据
+     * @param begin
+     * @param end
+     * @return
+     */
+    @Override
+    public OrderReportVO getStatisticsReport(LocalDate begin, LocalDate end) {
+        //存放从begin到end之间每天对应的日期
+        List<LocalDate> dateList = new ArrayList();
+        dateList.add(begin);
+        while(!begin.equals(end)){
+            begin = begin.plusDays(1);
+            dateList.add(begin);
+        }
+
+        //存放每天的订单数量列表
+        List<Integer> orderCountList = new ArrayList<>();
+        //存放每天有效订单数量列表
+        List<Integer> validOrderCountList = new ArrayList<>();
+        //存放订单总数
+        Integer totalOrderCount =0;
+        //存放有效订单总数
+        Integer validOrderCount =0;
+        //存放订单完成率
+        Double orderCompletionRate = 0.0;
+
+        for (LocalDate date : dateList) {
+            LocalDateTime beginTime = LocalDateTime.of(date, LocalTime.MIN);
+            LocalDateTime endTime = LocalDateTime.of(date, LocalTime.MAX);
+
+            Map map =  new HashMap();
+            map.put("beginTime",beginTime);
+            map.put("endTime",endTime);
+            Integer totalOrder = orderMapper.countOrderByMap(map);//每日订单数量
+            orderCountList.add(totalOrder);
+            if(totalOrder!=null){
+                totalOrderCount = totalOrderCount + totalOrder;
+            }
+
+            map.put("status", Orders.COMPLETED);
+            Integer validOrder = orderMapper.countOrderByMap(map);//每日有效订单数
+            validOrderCountList.add(validOrder);
+            if(validOrder!=null){
+                validOrderCount = validOrderCount + validOrder;
+            }
+        }
+        orderCompletionRate = totalOrderCount==0 ? 0.0 :(validOrderCount*1.0/totalOrderCount);
+
+        return OrderReportVO
+                .builder()
+                .dateList(StringUtils.join(dateList, ","))
+                .orderCountList(StringUtils.join(orderCountList,","))
+                .validOrderCountList(StringUtils.join(validOrderCountList,","))
+                .orderCompletionRate(orderCompletionRate)
+                .totalOrderCount(totalOrderCount)
+                .validOrderCount(validOrderCount)
+                .build();
+
+    }
+
+
 }

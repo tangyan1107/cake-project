@@ -1,5 +1,6 @@
 package com.cake.service;
 
+import com.cake.vo.OrderReportVO;
 import com.cake.vo.TurnoverReportVO;
 import com.cake.vo.UserReportVO;
 
@@ -22,4 +23,12 @@ public interface ReportService {
      * @return
      */
     UserReportVO getUserReport(LocalDate begin, LocalDate end);
+
+    /**
+     * 统计指定时间内的订单相关数据
+     * @param begin
+     * @param end
+     * @return
+     */
+    OrderReportVO getStatisticsReport(LocalDate begin, LocalDate end);
 }

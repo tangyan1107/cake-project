@@ -2,6 +2,7 @@ package com.cake.controller.admin;
 
 import com.cake.result.Result;
 import com.cake.service.ReportService;
+import com.cake.vo.OrderReportVO;
 import com.cake.vo.TurnoverReportVO;
 import com.cake.vo.UserReportVO;
 import io.swagger.annotations.Api;
@@ -53,5 +54,21 @@ public class ReportController {
         log.info("用户数据统计:{},{}",begin,end);
         return Result.success(reportService.getUserReport(begin, end));
     }
+
+    /**
+     * 订单统计
+     * @param begin
+     * @param end
+     * @return
+     */
+    @ApiOperation("订单统计")
+    @GetMapping("/ordersStatistics")
+    public Result<OrderReportVO> ordersStatistics(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end){
+        log.info("订单数据统计:{},{}",begin,end);
+        return Result.success(reportService.getStatisticsReport(begin,end));
+    }
+
 
 }
