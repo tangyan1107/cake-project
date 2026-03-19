@@ -1,5 +1,6 @@
 package com.cake.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.cake.constant.MessageConstant;
 import com.cake.context.BaseContext;
@@ -16,6 +17,7 @@ import com.cake.vo.OrderPaymentVO;
 import com.cake.vo.OrderStatisticsVO;
 import com.cake.vo.OrderSubmitVO;
 import com.cake.vo.OrderVO;
+import com.cake.websocket.WebSocketServer;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.xiaoymin.knife4j.core.util.CollectionUtils;
@@ -27,9 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +48,8 @@ public class OrderServiceImpl implements OrderService {
     private UserMapper userMapper;
     @Autowired
     private WeChatPayUtil weChatPayUtil;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     /**
      * 用户下单
@@ -157,6 +159,16 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
+        //通过websocket向客户端浏览器推送消息
+        Map map = new HashMap();
+        map.put("type",1);//1表示来单提醒 2表示客户催单
+        map.put("orderId",ordersDB.getId());
+        map.put("content","订单号:" + outTradeNo);
+
+        String json = JSON.toJSONString(map);//转成JSON字符串
+        log.info("向商家播报：{}", json);
+        webSocketServer.sendToAllClient(json);
     }
 
     /**
@@ -423,6 +435,28 @@ public class OrderServiceImpl implements OrderService {
                 .deliveryTime(LocalDateTime.now())
                 .build();
         orderMapper.update(orders1);
+    }
+
+
+    /**
+     * 顾客催单
+     * @param id
+     */
+    @Override
+    public void reminder(Long id) {
+        Orders orders = orderMapper.getById(id);
+        if (orders == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        //通过websocket向客户端浏览器推送消息
+        Map map = new HashMap();
+        map.put("type",2);//1表示来单提醒 2表示客户催单
+        map.put("orderId",id);
+        map.put("content","订单号:" + orders.getNumber());
+        //通过websocket向客户端浏览器推送消息
+        String json = JSON.toJSONString(map);//转成JSON字符串
+        log.info("向商家播报：{}", json);
+        webSocketServer.sendToAllClient(json);
     }
 
 
