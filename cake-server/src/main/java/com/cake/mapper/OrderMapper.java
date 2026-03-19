@@ -1,11 +1,13 @@
 package com.cake.mapper;
 
+import com.cake.dto.GoodsSalesDTO;
 import com.cake.dto.OrdersPageQueryDTO;
 import com.cake.entity.Orders;
 import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -79,4 +81,12 @@ public interface OrderMapper {
      * @return
      */
     Integer countOrderByMap(Map map);
+
+    /**
+     * 统计指定时间区间内的销量排名前十
+     * @param beginTime
+     * @param endTime
+     * @return
+     */
+    List<GoodsSalesDTO> getSalesTop10(LocalDateTime beginTime, LocalDateTime endTime);
 }

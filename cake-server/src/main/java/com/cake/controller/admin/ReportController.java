@@ -3,6 +3,7 @@ package com.cake.controller.admin;
 import com.cake.result.Result;
 import com.cake.service.ReportService;
 import com.cake.vo.OrderReportVO;
+import com.cake.vo.SalesTop10ReportVO;
 import com.cake.vo.TurnoverReportVO;
 import com.cake.vo.UserReportVO;
 import io.swagger.annotations.Api;
@@ -70,5 +71,19 @@ public class ReportController {
         return Result.success(reportService.getStatisticsReport(begin,end));
     }
 
+    /**
+     * 销量排名top10
+     * @param begin
+     * @param end
+     * @return
+     */
+    @ApiOperation("销量排名top10")
+    @GetMapping("/top10")
+    public Result<SalesTop10ReportVO> top10(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end){
+        log.info("销量排名top10:{},{}",begin,end);
+        return Result.success(reportService.getSalesTop10(begin,end));
+    }
 
 }
