@@ -449,8 +449,8 @@ onMounted(() => {
       </div>
       <div
         class="status-tab"
-        :class="{ active: searchForm.status === 7 }"
-        @click="handleStatusChange(7)"
+        :class="{ active: searchForm.status === 6 }"
+        @click="handleStatusChange(6)"
       >
         已取消
       </div>

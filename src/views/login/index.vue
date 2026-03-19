@@ -59,6 +59,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { employeeApi } from '@/api/employee'
+import websocket from '@/utils/websocket'
 
 const router = useRouter()
 const loginFormRef = ref(null)
@@ -97,6 +98,15 @@ const handleLogin = async () => {
           localStorage.setItem('userInfo', JSON.stringify(response.data))
           
           ElMessage.success('登录成功')
+          
+          // 建立 WebSocket 连接
+          try {
+            const userId = response.data.id || response.data.sid || 'default'
+            await websocket.initWebSocket(userId)
+            console.log('✅ WebSocket 连接已建立')
+          } catch (wsError) {
+            console.warn('WebSocket 连接失败，但不影响使用:', wsError)
+          }
           
           // 跳转到工作台
           router.push('/dashboard')
