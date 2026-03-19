@@ -3,6 +3,7 @@ package com.cake.controller.admin;
 import com.cake.result.Result;
 import com.cake.service.ReportService;
 import com.cake.vo.TurnoverReportVO;
+import com.cake.vo.UserReportVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -39,4 +40,18 @@ public class ReportController {
         log.info("营业额数据统计:{},{}",begin,end);
         return Result.success(reportService.getTurnoverReport(begin, end));
     }
+
+    /**
+     * 用户统计
+     * @return
+     */
+    @ApiOperation("用户统计")
+    @GetMapping("/userStatistics")
+    public Result<UserReportVO> userStatistics(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end){
+        log.info("用户数据统计:{},{}",begin,end);
+        return Result.success(reportService.getUserReport(begin, end));
+    }
+
 }
