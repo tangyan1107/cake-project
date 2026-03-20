@@ -6,13 +6,15 @@ import com.cake.vo.DishOverViewVO;
 import com.cake.vo.OrderOverViewVO;
 import com.cake.vo.SetmealOverViewVO;
 
+import java.time.LocalDateTime;
+
 public interface WorkspaceService {
 
     /**
-     * 查询今日数据
+     * 根据时间段统计营业时间
      * @return
      */
-    BusinessDataVO businessDate();
+    BusinessDataVO businessDate(LocalDateTime begin, LocalDateTime end);
 
     /**
      * 查询订单数据

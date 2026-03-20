@@ -35,40 +35,44 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     private SetmealMapper setmealMapper;
 
     /**
-     * 查询今日数据
+     * 根据传入日期查询数据
      * @return
      */
     @Override
-    public BusinessDataVO businessDate() {
-        LocalDate date = LocalDate.now();
+    public BusinessDataVO businessDate(LocalDateTime begin,LocalDateTime end) {
+        /*LocalDate date = LocalDate.now();
         Map map = mapTime();
-
         OrderReportVO orderReportVO = reportService.getStatisticsReport(date,date);
-        Double orderCompletionRate = orderReportVO.getOrderCompletionRate();//订单完成率
+        Double orderCompletionRate = orderReportVO.getOrderCompletionRate();//订单完成率*/
+        Map map = new HashMap();
+        map.put("beginTime",begin);
+        map.put("endTime",end);
 
-        map.put("status", Orders.COMPLETED);
+        //查询总订单数
+        Integer totalOrderCount = orderMapper.countOrderByMap(map);
+
+        map.put("status",Orders.COMPLETED);
         Double turnover = orderMapper.sumByMap(map);
         turnover = turnover == null ? 0.0 : turnover;//营业额
 
         Integer validOrder = orderMapper.countOrderByMap(map);//每日有效订单数
 
         Double unitPrice;
+        Double orderCompletion = 0.0;
         if( validOrder == null || validOrder == 0 ){
             unitPrice = 0.0;
         }else{
             unitPrice = turnover/validOrder;//平均客单价
+            orderCompletion = validOrder.doubleValue()/totalOrderCount;//订单完成率
         }
-
         BusinessDataVO  businessDataVO = BusinessDataVO
                 .builder()
                 .newUsers(userMapper.countByMap(map))//新增用户数
-                .orderCompletionRate(orderCompletionRate)
+                .orderCompletionRate(orderCompletion)
                 .turnover(turnover)
                 .validOrderCount(validOrder)
                 .unitPrice(unitPrice)
                 .build();
-
-
         return businessDataVO;
     }
 
