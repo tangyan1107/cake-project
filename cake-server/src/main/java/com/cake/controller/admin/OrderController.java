@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController("adminOrderController")
 @RequestMapping("/admin/order")
 @Slf4j
-@Api("订单管理接口")
+@Api(tags = "订单管理接口")
 public class OrderController {
 
     @Autowired
