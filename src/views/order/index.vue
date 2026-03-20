@@ -518,7 +518,7 @@ onMounted(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="userName" label="用户名" align="center" width="80" />
+        <el-table-column prop="consignee" label="收货人" align="center" width="80" />
         <el-table-column prop="phone" label="手机号" align="center" min-width="110" />
         <el-table-column prop="address" label="地址" align="center" min-width="150" />
         <el-table-column prop="orderTime" label="下单时间" align="center" min-width="140">

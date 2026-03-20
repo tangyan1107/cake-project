@@ -6,7 +6,8 @@ import {
   TrendCharts,
   User,
   ShoppingCart,
-  Trophy
+  Trophy,
+  Download
 } from '@element-plus/icons-vue'
 
 // 日期范围
@@ -677,6 +678,37 @@ const handleTimeTabChange = (tab) => {
   loadAllData()
 }
 
+// 导出数据
+const handleExport = async () => {
+  if (!dateRange.value || dateRange.value.length !== 2) {
+    ElMessage.warning('请先选择日期范围')
+    return
+  }
+
+  try {
+    const params = {
+      begin: dateRange.value[0],
+      end: dateRange.value[1]
+    }
+    const res = await reportApi.exportExcel(params)
+    
+    // 创建下载链接
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `运营数据报表_${params.begin}_${params.end}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+    
+    ElMessage.success('数据导出成功')
+  } catch (error) {
+    console.error('导出数据失败:', error)
+    ElMessage.error('数据导出失败')
+  }
+}
+
 // 设置默认日期范围（最近7天）
 const setDefaultDateRange = () => {
   dateRange.value = getDateRangeByTab('近7日')
@@ -714,6 +746,9 @@ onMounted(() => {
           />
           <el-button type="primary" :icon="TrendCharts" @click="handleSearch" style="margin-left: 12px;">
             查询数据
+          </el-button>
+          <el-button type="success" :icon="Download" @click="handleExport" style="margin-left: 8px;">
+            导出近30天数据
           </el-button>
         </div>
         <div class="time-tabs">

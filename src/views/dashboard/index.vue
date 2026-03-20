@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { employeeApi } from '@/api/employee'
+import { orderApi } from '@/api/order'
 import {
   Money,
   ShoppingCart,
@@ -12,7 +14,9 @@ import {
   Dish,
   ShoppingBag,
   Warning,
-  ArrowRight
+  ArrowRight,
+  Clock,
+  Van
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -49,6 +53,12 @@ const setmealData = ref({
 
 // 加载状态
 const loading = ref(false)
+
+// 待处理订单数据（待接单和待派送）
+const pendingOrders = ref([])
+
+// 最近订单数据（用于订单信息表格）
+const recentOrders = ref([])
 
 // 获取今日运营数据
 const getBusinessData = async () => {
@@ -98,6 +108,149 @@ const getOverviewSetmeals = async () => {
   }
 }
 
+// 获取最近订单列表（待接单和待派送）
+const getRecentOrders = async () => {
+  try {
+    // 获取待接单订单（status=2）
+    const waitingParams = {
+      page: 1,
+      pageSize: 5,
+      status: 2
+    }
+    // 获取待派送订单（status=3）
+    const deliveringParams = {
+      page: 1,
+      pageSize: 5,
+      status: 3
+    }
+
+    const [waitingRes, deliveringRes] = await Promise.all([
+      orderApi.getOrderList(waitingParams),
+      orderApi.getOrderList(deliveringParams)
+    ])
+
+    let orders = []
+    if (waitingRes.code === 1 && waitingRes.data && waitingRes.data.records) {
+      orders = orders.concat(waitingRes.data.records)
+    }
+    if (deliveringRes.code === 1 && deliveringRes.data && deliveringRes.data.records) {
+      orders = orders.concat(deliveringRes.data.records)
+    }
+
+    // 按下单时间排序，取最新的10条
+    orders.sort((a, b) => new Date(b.orderTime) - new Date(a.orderTime))
+    recentOrders.value = orders.slice(0, 10)
+  } catch (error) {
+    console.error('获取订单列表失败:', error)
+  }
+}
+
+// 接单处理
+const handleConfirmOrder = async (row) => {
+  try {
+    const res = await orderApi.confirmOrder({ id: row.id })
+    if (res.code === 1) {
+      ElMessage.success('接单成功')
+      getRecentOrders()
+      getOverviewOrders()
+    } else {
+      ElMessage.error(res.msg || '接单失败')
+    }
+  } catch (error) {
+    ElMessage.error('接单失败')
+  }
+}
+
+// 拒单处理
+const handleRejectionOrder = async (row) => {
+  try {
+    const res = await orderApi.rejectionOrder({ id: row.id, rejectionReason: '订单量较多，暂时无法接单' })
+    if (res.code === 1) {
+      ElMessage.success('拒单成功')
+      getRecentOrders()
+      getOverviewOrders()
+    } else {
+      ElMessage.error(res.msg || '拒单失败')
+    }
+  } catch (error) {
+    ElMessage.error('拒单失败')
+  }
+}
+
+// 派送处理
+const handleDeliveryOrder = async (row) => {
+  try {
+    const res = await orderApi.deliveryOrder(row.id)
+    if (res.code === 1) {
+      ElMessage.success('派送成功')
+      getRecentOrders()
+      getOverviewOrders()
+    } else {
+      ElMessage.error(res.msg || '派送失败')
+    }
+  } catch (error) {
+    ElMessage.error('派送失败')
+  }
+}
+
+// 取消订单处理
+const handleCancelOrder = async (row) => {
+  try {
+    const res = await orderApi.cancelOrder({ id: row.id, cancelReason: '客户电话取消' })
+    if (res.code === 1) {
+      ElMessage.success('取消成功')
+      getRecentOrders()
+      getOverviewOrders()
+    } else {
+      ElMessage.error(res.msg || '取消失败')
+    }
+  } catch (error) {
+    ElMessage.error('取消失败')
+  }
+}
+
+// 完成订单处理
+const handleCompleteOrder = async (row) => {
+  try {
+    const res = await orderApi.completeOrder(row.id)
+    if (res.code === 1) {
+      ElMessage.success('订单已完成')
+      getRecentOrders()
+      getOverviewOrders()
+    } else {
+      ElMessage.error(res.msg || '完成订单失败')
+    }
+  } catch (error) {
+    ElMessage.error('完成订单失败')
+  }
+}
+
+// 查看订单详情
+const handleViewDetail = (row) => {
+  router.push('/order')
+}
+
+// 状态标签映射
+const getStatusTagType = (status) => {
+  const typeMap = {
+    2: 'warning',  // 待接单
+    3: 'primary',  // 待派送
+    4: 'success',  // 已完成
+    5: 'info'      // 已取消
+  }
+  return typeMap[status] || 'info'
+}
+
+const getStatusLabel = (status) => {
+  const labelMap = {
+    2: '待接单',
+    3: '待派送',
+    4: '已完成',
+    5: '已取消'
+  }
+  return labelMap[status] || '未知'
+}
+
 // 加载所有数据
 const loadData = async () => {
   loading.value = true
@@ -105,9 +258,19 @@ const loadData = async () => {
     getBusinessData(),
     getOverviewOrders(),
     getOverviewDishes(),
-    getOverviewSetmeals()
+    getOverviewSetmeals(),
+    getRecentOrders()
   ])
   loading.value = false
+}
+
+// 获取今日日期格式化字符串
+const getTodayDateString = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  return `${year}年${month}月${day}日`
 }
 
 // 格式化百分比
@@ -137,6 +300,11 @@ const goToSetmeals = () => {
   router.push('/setmeal')
 }
 
+// 跳转到数据统计
+const goToStatistics = () => {
+  router.push('/statistics')
+}
+
 onMounted(() => {
   loadData()
 })
@@ -154,7 +322,14 @@ onMounted(() => {
     <el-card class="data-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="card-title">今日运营数据</span>
+          <div class="card-title-wrapper">
+            <span class="card-title">今日数据</span>
+            <span class="card-date">{{ getTodayDateString() }}</span>
+          </div>
+          <el-button type="primary" link @click="goToStatistics" class="view-detail-btn">
+            查看详情数据
+            <el-icon><ArrowRight /></el-icon>
+          </el-button>
         </div>
       </template>
       <div class="data-grid">
@@ -207,44 +382,69 @@ onMounted(() => {
     </el-card>
 
     <!-- 订单和商品概览 -->
-    <div class="overview-row">
-      <!-- 今日订单 -->
-      <el-card class="overview-card" shadow="hover">
+    <div class="overview-row compact">
+      <!-- 订单管理 -->
+      <el-card class="overview-card compact" shadow="hover">
         <template #header>
           <div class="card-header">
-            <span class="card-title">今日订单</span>
+            <span class="card-title">订单管理</span>
             <el-button type="primary" link @click="goToOrders" class="view-detail-btn">
               查看订单明细
               <el-icon><ArrowRight /></el-icon>
             </el-button>
           </div>
         </template>
-        <div class="order-list">
-          <div class="order-item">
-            <span class="order-label">待接单</span>
-            <span class="order-value waiting">{{ orderData.waitingOrders }}</span>
+        <div class="order-stats-with-icon">
+          <div class="order-stat-box">
+            <div class="stat-icon-box waiting">
+              <el-icon :size="22"><Clock /></el-icon>
+            </div>
+            <div class="stat-info-box">
+              <div class="stat-value-text waiting">{{ orderData.waitingOrders }}</div>
+              <div class="stat-label-text nowrap">待接单</div>
+            </div>
           </div>
-          <div class="order-item">
-            <span class="order-label">待派送</span>
-            <span class="order-value delivering">{{ orderData.deliveredOrders }}</span>
+          <div class="order-stat-box">
+            <div class="stat-icon-box delivering">
+              <el-icon :size="22"><Van /></el-icon>
+            </div>
+            <div class="stat-info-box">
+              <div class="stat-value-text delivering">{{ orderData.deliveredOrders }}</div>
+              <div class="stat-label-text nowrap">待派送</div>
+            </div>
           </div>
-          <div class="order-item">
-            <span class="order-label">已完成</span>
-            <span class="order-value completed">{{ orderData.completedOrders }}</span>
+          <div class="order-stat-box">
+            <div class="stat-icon-box completed">
+              <el-icon :size="22"><CircleCheck /></el-icon>
+            </div>
+            <div class="stat-info-box">
+              <div class="stat-value-text completed">{{ orderData.completedOrders }}</div>
+              <div class="stat-label-text nowrap">已完成</div>
+            </div>
           </div>
-          <div class="order-item">
-            <span class="order-label">已取消</span>
-            <span class="order-value cancelled">{{ orderData.cancelledOrders }}</span>
+          <div class="order-stat-box">
+            <div class="stat-icon-box cancelled">
+              <el-icon :size="22"><Warning /></el-icon>
+            </div>
+            <div class="stat-info-box">
+              <div class="stat-value-text cancelled">{{ orderData.cancelledOrders }}</div>
+              <div class="stat-label-text nowrap">已取消</div>
+            </div>
           </div>
-          <div class="order-item">
-            <span class="order-label">全部订单</span>
-            <span class="order-value all">{{ orderData.allOrders }}</span>
+          <div class="order-stat-box">
+            <div class="stat-icon-box all">
+              <el-icon :size="22"><ShoppingBag /></el-icon>
+            </div>
+            <div class="stat-info-box">
+              <div class="stat-value-text all">{{ orderData.allOrders }}</div>
+              <div class="stat-label-text nowrap">全部订单</div>
+            </div>
           </div>
         </div>
       </el-card>
 
       <!-- 菜品总览 -->
-      <el-card class="overview-card" shadow="hover">
+      <el-card class="overview-card compact" shadow="hover">
         <template #header>
           <div class="card-header">
             <span class="card-title">菜品总览</span>
@@ -254,30 +454,30 @@ onMounted(() => {
             </el-button>
           </div>
         </template>
-        <div class="product-overview">
-          <div class="overview-item">
-            <div class="overview-icon sold">
+        <div class="product-stats-with-icon">
+          <div class="product-stat-box">
+            <div class="product-icon-box sold">
               <el-icon :size="28"><Food /></el-icon>
             </div>
-            <div class="overview-info">
-              <div class="overview-value">{{ dishData.sold }}</div>
-              <div class="overview-label">已启售</div>
+            <div class="product-info-box">
+              <div class="product-value-text">{{ dishData.sold }}</div>
+              <div class="product-label-text">已启售</div>
             </div>
           </div>
-          <div class="overview-item">
-            <div class="overview-icon discontinued">
+          <div class="product-stat-box">
+            <div class="product-icon-box discontinued">
               <el-icon :size="28"><Warning /></el-icon>
             </div>
-            <div class="overview-info">
-              <div class="overview-value">{{ dishData.discontinued }}</div>
-              <div class="overview-label">已停售</div>
+            <div class="product-info-box">
+              <div class="product-value-text">{{ dishData.discontinued }}</div>
+              <div class="product-label-text">已停售</div>
             </div>
           </div>
         </div>
       </el-card>
 
       <!-- 套餐总览 -->
-      <el-card class="overview-card" shadow="hover">
+      <el-card class="overview-card compact" shadow="hover">
         <template #header>
           <div class="card-header">
             <span class="card-title">套餐总览</span>
@@ -287,28 +487,106 @@ onMounted(() => {
             </el-button>
           </div>
         </template>
-        <div class="product-overview">
-          <div class="overview-item">
-            <div class="overview-icon sold">
+        <div class="product-stats-with-icon">
+          <div class="product-stat-box">
+            <div class="product-icon-box sold">
               <el-icon :size="28"><Dish /></el-icon>
             </div>
-            <div class="overview-info">
-              <div class="overview-value">{{ setmealData.sold }}</div>
-              <div class="overview-label">已启售</div>
+            <div class="product-info-box">
+              <div class="product-value-text">{{ setmealData.sold }}</div>
+              <div class="product-label-text">已启售</div>
             </div>
           </div>
-          <div class="overview-item">
-            <div class="overview-icon discontinued">
+          <div class="product-stat-box">
+            <div class="product-icon-box discontinued">
               <el-icon :size="28"><Warning /></el-icon>
             </div>
-            <div class="overview-info">
-              <div class="overview-value">{{ setmealData.discontinued }}</div>
-              <div class="overview-label">已停售</div>
+            <div class="product-info-box">
+              <div class="product-value-text">{{ setmealData.discontinued }}</div>
+              <div class="product-label-text">已停售</div>
             </div>
           </div>
         </div>
       </el-card>
     </div>
+
+    <!-- 订单信息 -->
+    <el-card class="order-info-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <span class="card-title">订单信息</span>
+          <div class="header-right">
+            <div class="header-tags">
+              <el-tag type="warning" size="small" effect="light" class="count-tag">
+                待接单({{ orderData.waitingOrders }})
+              </el-tag>
+              <el-tag type="primary" size="small" effect="light" class="count-tag">
+                待派送({{ orderData.deliveredOrders }})
+              </el-tag>
+            </div>
+            <el-button type="primary" link @click="goToOrders" class="view-detail-btn">
+              查看订单明细
+              <el-icon><ArrowRight /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
+      <el-table :data="recentOrders" style="width: 100%" size="small" :header-cell-style="{ background: '#f5f7fa' }">
+        <el-table-column prop="number" label="订单号" width="130" align="center" />
+        <el-table-column label="订单菜品" min-width="120">
+          <template #default="{ row }">
+            <span class="order-dishes">{{ row.orderDishes || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="address" label="地址" min-width="100" show-overflow-tooltip />
+        <el-table-column prop="estimatedDeliveryTime" label="预计送达时间" width="130" align="center" />
+        <el-table-column label="实收金额" width="90" align="center">
+          <template #default="{ row }">
+            <span class="amount">¥{{ row.amount?.toFixed(2) || '0.00' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" min-width="80" show-overflow-tooltip />
+        <el-table-column label="状态" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusTagType(row.status)" size="small">
+              {{ getStatusLabel(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="130" align="center">
+          <template #default="{ row }">
+            <el-button 
+              v-if="row.status === 2" 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleConfirmOrder(row)"
+            >
+              接单
+            </el-button>
+            <el-button 
+              v-if="row.status === 2" 
+              link 
+              type="danger" 
+              size="small" 
+              @click="handleRejectionOrder(row)"
+            >
+              拒单
+            </el-button>
+            <el-button 
+              v-if="row.status === 3" 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleDeliveryOrder(row)"
+            >
+              派送
+            </el-button>
+            <el-button link type="primary" size="small" @click="handleViewDetail(row)">查看</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
   </div>
 </template>
 
@@ -321,19 +599,19 @@ onMounted(() => {
 }
 
 .dashboard-header {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .dashboard-header h2 {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #303133;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
 }
 
 .dashboard-header p {
   color: #909399;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .data-card {
@@ -350,6 +628,18 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.card-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-date {
+  font-size: 13px;
+  color: #909399;
+  font-weight: normal;
 }
 
 .view-detail-btn {
@@ -432,10 +722,200 @@ onMounted(() => {
   gap: 20px;
 }
 
+.overview-row.compact {
+  grid-template-columns: 2fr 1fr 1fr;
+  margin-bottom: 20px;
+}
+
 .overview-card {
   height: 100%;
 }
 
+.overview-card.compact {
+  min-height: auto;
+}
+
+.overview-card.compact :deep(.el-card__body) {
+  padding: 12px 16px;
+}
+
+/* 订单统计带图标布局 */
+.order-stats-with-icon {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.order-stat-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  background: transparent;
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.stat-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.stat-icon-box.waiting {
+  background: linear-gradient(135deg, #E6A23C 0%, #F0C78A 100%);
+}
+
+.stat-icon-box.delivering {
+  background: linear-gradient(135deg, #409EFF 0%, #79BBFF 100%);
+}
+
+.stat-icon-box.completed {
+  background: linear-gradient(135deg, #67C23A 0%, #85CE61 100%);
+}
+
+.stat-icon-box.cancelled {
+  background: linear-gradient(135deg, #F56C6C 0%, #FAB6B6 100%);
+}
+
+.stat-icon-box.all {
+  background: linear-gradient(135deg, #909399 0%, #C0C4CC 100%);
+}
+
+.stat-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-value-text {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.stat-value-text.waiting {
+  color: #E6A23C;
+}
+
+.stat-value-text.delivering {
+  color: #409EFF;
+}
+
+.stat-value-text.completed {
+  color: #67C23A;
+}
+
+.stat-value-text.cancelled {
+  color: #F56C6C;
+}
+
+.stat-value-text.all {
+  color: #303133;
+}
+
+.stat-label-text {
+  font-size: 12px;
+  color: #606266;
+}
+
+.stat-label-text.nowrap {
+  white-space: nowrap;
+}
+
+/* 商品统计带图标布局 */
+.product-stats-with-icon {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+}
+
+.product-stat-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.product-icon-box.sold {
+  background: linear-gradient(135deg, #67C23A 0%, #85CE61 100%);
+}
+
+.product-icon-box.discontinued {
+  background: linear-gradient(135deg, #909399 0%, #C0C4CC 100%);
+}
+
+.product-info-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.product-value-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.product-label-text {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 订单信息卡片 */
+.order-info-card {
+  margin-top: 0;
+}
+
+.order-info-card :deep(.el-card__body) {
+  padding: 0;
+}
+
+.order-info-card .header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.order-info-card .header-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.order-info-card .count-tag {
+  font-size: 13px;
+}
+
+.order-dishes {
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-info-card .amount {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+/* 原有样式保留 */
 .order-list {
   display: flex;
   flex-direction: column;
@@ -537,6 +1017,14 @@ onMounted(() => {
   .overview-row {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .overview-row.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .order-stats-with-icon {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -546,6 +1034,20 @@ onMounted(() => {
 
   .overview-row {
     grid-template-columns: 1fr;
+  }
+
+  .overview-row.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .order-stats-with-icon {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .product-stats-with-icon {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
 }
 </style>
