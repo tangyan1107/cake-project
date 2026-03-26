@@ -66,6 +66,12 @@ const routes = [
         name: 'EmployeeEdit',
         component: () => import('@/views/employee/form.vue'),
         meta: { title: '修改员工' }
+      },
+      {
+        path: '/assistant',
+        name: 'Assistant',
+        component: () => import('@/views/assistant/index.vue'),
+        meta: { title: '商家助手' }
       }
     ]
   }

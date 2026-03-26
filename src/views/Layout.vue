@@ -11,7 +11,8 @@ import {
   DataLine,
   UserFilled,
   Bell,
-  ArrowDown
+  ArrowDown,
+  ChatDotRound
 } from '@element-plus/icons-vue'
 import websocket from '@/utils/websocket'
 
@@ -37,7 +38,8 @@ const menuList = [
   { path: '/dish', title: '菜品管理', icon: Food },
   { path: '/setmeal', title: '套餐管理', icon: Dish },
   { path: '/statistics', title: '数据统计', icon: DataLine },
-  { path: '/employee', title: '员工管理', icon: UserFilled }
+  { path: '/employee', title: '员工管理', icon: UserFilled },
+  { path: '/assistant', title: '商家助手', icon: ChatDotRound }
 ]
 
 const handleMenuSelect = (path) => {
