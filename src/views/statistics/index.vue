@@ -9,6 +9,7 @@ import {
   Trophy,
   Download
 } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
 
 // 日期范围
 const dateRange = ref([])

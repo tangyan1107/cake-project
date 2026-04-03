@@ -96,12 +96,57 @@ export const aiApi = {
           if (buffer.trim()) {
             const lines = buffer.split('\n')
             for (const line of lines) {
-              if (line.startsWith('data:')) {
-                const data = line.slice(5).trim()
-                if (data) {
-                  fullResponse += data
+              const trimmedLine = line.trim()
+              if (!trimmedLine) continue
+              
+              // 尝试直接解析整行作为JSON
+              try {
+                const jsonData = JSON.parse(trimmedLine)
+                let text = ''
+                if (typeof jsonData === 'string') {
+                  text = jsonData
+                } else if (typeof jsonData === 'object' && jsonData !== null) {
+                  text = jsonData.text || ''
+                }
+                if (text && typeof text === 'string') {
+                  text = text.replace(/\\n/g, '\n')
+                  fullResponse += text
                   if (onMessage) {
-                    onMessage(data, fullResponse)
+                    onMessage(text, fullResponse)
+                  }
+                }
+                continue
+              } catch (e) {
+                // 不是JSON，作为纯文本处理
+                const text = trimmedLine.replace(/\\n/g, '\n')
+                fullResponse += text
+                if (onMessage) {
+                  onMessage(text, fullResponse)
+                }
+                continue
+              }
+              
+              if (trimmedLine.startsWith('data:')) {
+                const data = trimmedLine.slice(5).trim()
+                if (data) {
+                  try {
+                    // 尝试解析JSON格式
+                    const jsonData = JSON.parse(data)
+                    let text = jsonData.text || data
+                    if (typeof text === 'string') {
+                      text = text.replace(/\\n/g, '\n')
+                    }
+                    fullResponse += text
+                    if (onMessage) {
+                      onMessage(text, fullResponse)
+                    }
+                  } catch (e) {
+                    // 如果不是JSON，直接使用文本
+                    const text = data.replace(/\\n/g, '\n')
+                    fullResponse += text
+                    if (onMessage) {
+                      onMessage(text, fullResponse)
+                    }
                   }
                 }
               }
@@ -111,7 +156,9 @@ export const aiApi = {
         }
         
         // 解码收到的数据并添加到缓冲区
-        buffer += decoder.decode(value, { stream: true })
+        const chunk = decoder.decode(value, { stream: true })
+        console.log('收到原始数据 chunk:', JSON.stringify(chunk))
+        buffer += chunk
         
         // 处理缓冲区中的完整行
         const lines = buffer.split('\n')
@@ -120,12 +167,69 @@ export const aiApi = {
         
         for (const line of lines) {
           const trimmedLine = line.trim()
+          console.log('处理行:', JSON.stringify(trimmedLine))
+          if (!trimmedLine) continue
+          
+          // 尝试直接解析整行作为JSON（后端直接返回JSON格式）
+          try {
+            const jsonData = JSON.parse(trimmedLine)
+            console.log('解析JSON成功:', jsonData, '类型:', typeof jsonData)
+            
+            let text = ''
+            // 如果解析结果是字符串（后端返回的是纯文本字符串）
+            if (typeof jsonData === 'string') {
+              text = jsonData
+            } else if (typeof jsonData === 'object' && jsonData !== null) {
+              // 如果是对象，尝试获取 text 字段
+              text = jsonData.text || ''
+            }
+            
+            // 处理转义字符，将 \n 转换为实际换行
+            if (text && typeof text === 'string') {
+              text = text.replace(/\\n/g, '\n')
+              fullResponse += text
+              if (onMessage) {
+                onMessage(text, fullResponse)
+              }
+            }
+            continue
+          } catch (e) {
+            // 不是JSON，作为纯文本处理
+            console.log('不是JSON格式，作为纯文本处理:', trimmedLine)
+            const text = trimmedLine.replace(/\\n/g, '\n')
+            fullResponse += text
+            if (onMessage) {
+              onMessage(text, fullResponse)
+            }
+            continue
+          }
+          
+          // 检查SSE格式 data: 开头
           if (trimmedLine.startsWith('data:')) {
             const data = trimmedLine.slice(5).trim()
+            console.log('提取SSE数据:', JSON.stringify(data))
             if (data) {
-              fullResponse += data
-              if (onMessage) {
-                onMessage(data, fullResponse)
+              try {
+                // 尝试解析JSON格式
+                const jsonData = JSON.parse(data)
+                console.log('解析SSE内JSON成功:', jsonData)
+                let text = jsonData.text || data
+                // 处理转义字符
+                if (typeof text === 'string') {
+                  text = text.replace(/\\n/g, '\n')
+                }
+                fullResponse += text
+                if (onMessage) {
+                  onMessage(text, fullResponse)
+                }
+              } catch (e) {
+                console.log('SSE内非JSON数据，直接使用:', data)
+                // 如果不是JSON，直接使用文本
+                const text = data.replace(/\\n/g, '\n')
+                fullResponse += text
+                if (onMessage) {
+                  onMessage(text, fullResponse)
+                }
               }
             }
           }

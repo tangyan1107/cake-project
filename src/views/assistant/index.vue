@@ -3,6 +3,7 @@ import { ref, onMounted, nextTick, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { aiApi } from '@/api/ai'
 import { ChatDotRound, User, Promotion } from '@element-plus/icons-vue'
+import MarkdownIt from 'markdown-it'
 
 // 消息列表
 const messages = ref([
@@ -12,6 +13,13 @@ const messages = ref([
     time: new Date()
   }
 ])
+
+// 初始化 Markdown 解析器
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  typographer: true
+})
 
 // 输入框内容
 const inputMessage = ref('')
@@ -198,7 +206,12 @@ onMounted(() => {
               <span class="message-time">{{ formatTime(message.time) }}</span>
             </div>
             <div class="message-bubble" :class="message.type">
-              <div class="message-text">{{ message.content }}</div>
+              <div 
+                v-if="message.type === 'assistant'" 
+                class="message-text markdown-body" 
+                v-html="md.render(message.content)"
+              ></div>
+              <div v-else class="message-text">{{ message.content }}</div>
               <div v-if="message.isStreaming" class="typing-indicator">
                 <span class="dot"></span>
                 <span class="dot"></span>
@@ -508,5 +521,106 @@ onMounted(() => {
 
 .message-container::-webkit-scrollbar-thumb:hover {
   background: #909399;
+}
+
+/* Markdown 样式 */
+.markdown-body {
+  line-height: 1.6;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3),
+.markdown-body :deep(h4),
+.markdown-body :deep(h5),
+.markdown-body :deep(h6) {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-body :deep(h1) { font-size: 1.5em; }
+.markdown-body :deep(h2) { font-size: 1.3em; }
+.markdown-body :deep(h3) { font-size: 1.15em; }
+
+.markdown-body :deep(p) {
+  margin: 8px 0;
+}
+
+.markdown-body :deep(strong) {
+  font-weight: 600;
+  color: #303133;
+}
+
+.markdown-body :deep(em) {
+  font-style: italic;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-body :deep(li) {
+  margin: 4px 0;
+}
+
+.markdown-body :deep(code) {
+  background-color: #f4f4f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #d63384;
+}
+
+.markdown-body :deep(pre) {
+  background-color: #f4f4f5;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.markdown-body :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+  color: #303133;
+}
+
+.markdown-body :deep(a) {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-body :deep(blockquote) {
+  border-left: 4px solid #dcdfe6;
+  padding-left: 12px;
+  margin: 8px 0;
+  color: #606266;
+}
+
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid #dcdfe6;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-body :deep(th) {
+  background-color: #f5f7fa;
+  font-weight: 600;
 }
 </style>
